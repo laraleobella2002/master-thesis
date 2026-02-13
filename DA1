@@ -1,0 +1,24 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.optimize import curve_fit
+from google.colab import files
+
+data = pd.read_csv('data_8899.csv')
+
+grouped_data={}
+accuracy_list=[]
+
+for i in range(len(data)):
+    row = data.iloc[i]
+    name= row['label']
+    accuracy= row['response_numeric']
+  
+    if name not in grouped_data:
+        grouped_data[name] = []
+
+    grouped_data[name].append(accuracy)
+  
+    
+for name, accuracy in grouped_data.items():
+        print(f"{name}: {accuracy}")
