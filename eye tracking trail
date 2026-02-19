@@ -2,19 +2,23 @@ from psychopy import visual, event, core, monitors, gui
 import random
 import csv
 import os
+import pylink
+
+tk = pylink.EyeLink('100.1.1.1')
+tk.openDataFile('trial.edf') 
 
 step_size = 0.05
 min_value= 0.03
 num_trials = 60
-lineHight= 1
+lineHight= 1.5
 lineThickness = 2
-stim_time= 0.10
+stim_time= 0.25
 streak_left = 0
 streak_right = 0
 
 block_conditions = [
-    {'label':'Block 1: Binocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
-    {'label':'Block 2: Binocular_C', 'spacing': 0.5, 'crowdCount': 2, 'eccentricity': -5},
+    {'label':'Block 1: Binocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 8},
+    {'label':'Block 2: Binocular_C', 'spacing': 0.5, 'crowdCount': 2, 'eccentricity': -8},
     {'label':'Block 3: Monocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
     {'label':'Block 4: Monocular_C', 'spacing': 0.5, 'crowdCount': 2, 'eccentricity': -5},
 ]
@@ -40,7 +44,9 @@ rt_clock = core.Clock()
 first_page = visual.TextStim(win, text='Hello\n\n1. Please keep looking at the black cross during the trials.\n2. If the upper line is to the right, press →\n3. If it is to the left, press ←\n\nPress SPACE to start :)', color='black')
 first_page.draw()
 win.flip()
-event.waitKeys(keyList=['space'])
+event.waitKeys(keyList=['space']) 
+
+tk.doTrackerSetup()
 
 for condition in block_conditions:
     streak_left = 0
@@ -123,7 +129,7 @@ for condition in block_conditions:
             
         for flanker in flankers:
             flanker.draw()
-
+        tk.startRecording(1, 1, 1, 1)
         vernier1.draw()
         vernier2.draw()
         cross1.draw()
@@ -133,9 +139,11 @@ for condition in block_conditions:
         cross2.draw()
         core.wait(stim_time)
         win.flip()
+        tk.stopRecording()
         cross1.draw()
         cross2.draw()
         rt_clock.reset()
+        core.wait(2) 
         keys = event.waitKeys(keyList=['right', 'left','escape'])
         response_time = rt_clock.getTime()
 
@@ -192,4 +200,6 @@ win.flip()
 event.waitKeys(keyList=['escape'])
 data_file.close()
 win.close()
+tk.closeDataFile()
+tk.close()
 core.quit()
