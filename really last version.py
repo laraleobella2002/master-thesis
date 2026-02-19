@@ -6,15 +6,15 @@ import os
 step_size = 0.05
 min_value= 0.03
 num_trials = 60
-lineHight= 1.5
+lineHight= 1
 lineThickness = 2
-stim_time= 0.10
+stim_time= 0.250
 streak_left = 0
 streak_right = 0
 
 block_conditions = [
-    {'label':'Block 1: Binocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 8},
-    {'label':'Block 2: Binocular_C', 'spacing': 0.5, 'crowdCount': 2, 'eccentricity': -8},
+    {'label':'Block 1: Binocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
+    {'label':'Block 2: Binocular_C', 'spacing': 0.5, 'crowdCount': 2, 'eccentricity': -5},
     {'label':'Block 3: Monocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
     {'label':'Block 4: Monocular_C', 'spacing': 0.5, 'crowdCount': 2, 'eccentricity': -5},
 ]
