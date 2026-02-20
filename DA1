@@ -1,3 +1,5 @@
+#nawal 
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,3 +24,107 @@ for i in range(len(data)):
     
 for name, accuracy in grouped_data.items():
         print(f"{name}: {accuracy}")
+
+
+
+________________________________________________________________________________________________________
+#smallest offset in each block
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+from scipy.stats import norm
+import seaborn as sns
+
+df = pd.read_csv('data_55.csv')
+
+print("--- Smallest Correct Offset Per Block ---")
+correct_trials = df[df['statement'] == 'correct'].copy()
+correct_trials['abs_offset'] = correct_trials['offset'].abs()
+min_offsets = correct_trials.groupby('label')['abs_offset'].min()
+for label, min_val in min_offsets.items():
+    print(f"Block '{label}': {min_val}")
+print("\n")
+_______________________________________________________________________________________________________________
+#plotting psychometric function 
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+from scipy.stats import norm
+import seaborn as sns
+
+# 1. Load data
+df = pd.read_csv('data_55.csv')
+
+# 3. Psychometric Function Setup
+def psychometric_curve(x, mu, sigma):
+    return norm.cdf(x, loc=mu, scale=sigma)
+
+plt.figure(figsize=(10, 6))
+print("--- Psychometric Function Fit Results ---")
+
+# Group by label to loop through blocks easily
+for label, group in df.groupby('label'):
+    # Calculate proportion of "right" responses
+    summary = group.groupby('offset')['direction'].apply(lambda x: (x == 'right').mean()).reset_index(name='prob_right')
+    x_data, y_data = summary['offset'], summary['prob_right']
+    
+    # Fit the curve
+    try:
+        (mu, sigma), _ = curve_fit(psychometric_curve, x_data, y_data, p0=[0, 0.5])
+        print(f"Block '{label}': PSE = {mu:.3f} | JND = {sigma:.3f}")
+    except RuntimeError:
+        print(f"Block '{label}': Optimal parameters not found.")
+        continue # Skip plotting the curve for this block if it fails
+        
+    # Plotting Data Points and Fit Line
+    x_fit = np.linspace(df['offset'].min(), df['offset'].max(), 100)
+    
+    # FIX: Plot the line first, then grab its auto-assigned color for the scatter points
+    p = plt.plot(x_fit, psychometric_curve(x_fit, mu, sigma), linestyle='-', label=f'{label} Fit (JND={sigma:.2f})')
+    line_color = p[0].get_color() 
+    
+    plt.scatter(x_data, y_data, color=line_color, label=f'{label} Data')
+
+# 4. Format and save the plot
+plt.xlabel('Offset (Stimulus Intensity)')
+plt.ylabel('Proportion of "Right" Responses')
+plt.title('Psychometric Function by Block')
+plt.legend()
+plt.grid(True)
+plt.savefig('psychometric_function.png')
+plt.show()
+____________________________________________________________________________________________________________________________________________________
+#plotting offset with trails ( to know best number of trails )
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+from scipy.stats import norm
+import seaborn as sns
+
+df = pd.read_csv('data_55.csv')
+
+sns.relplot(
+    data=df, 
+    x='trials', 
+    y='offset', 
+    col='label',   
+    col_wrap=2,    
+    kind='line',   
+    marker='o'   
+)
+plt.savefig('easier_plot.png')
+
+_________________________________________________________________________________________________________________________________________
+
+
+
+
+
+
+
