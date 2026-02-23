@@ -5,6 +5,7 @@ import os
 
 step_size = 0.05
 min_value= 0.03
+max_value=0.45
 num_trials = 60
 lineHight= 1
 lineThickness = 2
@@ -170,9 +171,13 @@ for condition in block_conditions:
             if staircase == 'left':
                 start_value_left -= step_size
                 streak_left=0
+                if start_value_left < -current_max:
+                    start_value_left = -current_max
             else:
                 start_value_right += step_size
                 streak_right=0
+                if start_value_right > current_max:
+                    start_value_right = current_max
         writer.writerow([block_label, trials, offset, keys, direction, response_time, statement, response_numeric])
         
         cross1.lineColor = feedback_color
