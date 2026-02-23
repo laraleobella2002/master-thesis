@@ -10,6 +10,7 @@ tk.openDataFile('trial.edf')
 
 step_size = 0.05
 min_value= 0.03
+max_value=0.45
 num_trials = 60
 lineHight= 1.5
 lineThickness = 2
@@ -181,9 +182,13 @@ for condition in block_conditions:
             if staircase == 'left':
                 start_value_left -= step_size
                 streak_left=0
+                if start_value_left < -max_value:
+                    start_value_left = -max_value
             else:
                 start_value_right += step_size
                 streak_right=0
+                if start_value_right > max_value:
+                    start_value_right = max_value
         writer.writerow([block_label, trials, offset, keys, direction, response_time, statement, response_numeric])
         
         cross1.lineColor = feedback_color
