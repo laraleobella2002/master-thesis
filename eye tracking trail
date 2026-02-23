@@ -48,9 +48,11 @@ first_page.draw()
 win.flip()
 event.waitKeys(keyList=['space']) 
 
+win.units = 'pix'
 genv = EyeLinkCoreGraphicsPsychoPy(tk, win)
 pylink.openGraphicsEx(genv)
 tk.doTrackerSetup()
+win.units = 'deg'
 
 for condition in block_conditions:
     streak_left = 0
