@@ -179,7 +179,7 @@ for label, group in df.groupby('label'):
     plt.scatter(x_data, y_data, color=line_color, alpha=0.6, label=f'{label} Data')
 
 # 3. Format and save the plot
-plt.xlabel('Offset (Stimulus Intensity)')
+plt.xlabel('Offset ')
 plt.ylabel('Proportion of "Right" Responses')
 plt.title('Psychometric Function by Block')
 plt.legend()
