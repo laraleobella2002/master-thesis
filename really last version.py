@@ -4,7 +4,6 @@ import csv
 import os
 
 step_size = 0.05
-min_value= 0.03
 max_value=0.45
 num_trials = 60
 lineHight= 1
@@ -14,10 +13,10 @@ streak_left = 0
 streak_right = 0
 
 block_conditions = [
-    {'label':'Block 1: Binocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
-    {'label':'Block 2: Binocular_C', 'spacing': 0.5, 'crowdCount': 2, 'eccentricity': -5},
-    {'label':'Block 3: Monocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
-    {'label':'Block 4: Monocular_C', 'spacing': 0.5, 'crowdCount': 2, 'eccentricity': -5},
+    {'label':'Block 1: Binocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 8},
+    {'label':'Block 2: Binocular_C', 'spacing': 0.5, 'crowdCount': 2, 'eccentricity': -8},
+    {'label':'Block 3: Monocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 8},
+    {'label':'Block 4: Monocular_C', 'spacing': 0.5, 'crowdCount': 2, 'eccentricity': -8},
 ]
 
 expInfo={ 'participantID': ''}
@@ -28,7 +27,7 @@ participant_name = expInfo['participantID']
 fileName= f'data_{participant_name}.csv'
 data_file = open(fileName, 'w', newline='')
 writer = csv.writer(data_file)
-writer.writerow(['label', 'trials', 'offset', 'keys', 'direction', 'response_time', 'statement','response_numeric'])
+writer.writerow(['label', 'trials', 'offset', 'keys', 'direction', 'response_time', 'accuracy','response_numeric'])
 
 mon = monitors.Monitor('tempMonitor')
 mon.setWidth(53)
@@ -43,7 +42,7 @@ first_page.draw()
 win.flip()
 event.waitKeys(keyList=['space'])
 
-for condition in block_conditions:
+for condition in block_conditions * 2 :
     streak_left = 0
     streak_right = 0
     current_spacing = condition['spacing']
@@ -56,11 +55,11 @@ for condition in block_conditions:
     block_msg = visual.TextStim(win, text=msg, color='black')
     block_msg.draw()
     win.flip()
+    trial_types = ['left'] * int(num_trials / 2) + ['right'] * int(num_trials / 2)
     event.waitKeys(keyList=['space'])
-    
    
     for trials in range(num_trials):
-        staircase = random.choice(['left', 'right'])
+        staircase = trial_types[trials]
         if staircase == 'left':
             offset = start_value_left
             direction = 'left'
@@ -154,15 +153,11 @@ for condition in block_conditions:
                 if streak_left==2:
                     start_value_left+= step_size
                     streak_left=0
-                    if start_value_left > -min_value:
-                        start_value_left = -min_value
             else:
                 streak_right+=1
                 if streak_right==2:
                     start_value_right -= step_size
                     streak_right=0
-                    if start_value_right < min_value:
-                        start_value_right = min_value
                
         else:
             statement = 'false'
@@ -171,13 +166,13 @@ for condition in block_conditions:
             if staircase == 'left':
                 start_value_left -= step_size
                 streak_left=0
-                if start_value_left < -current_max:
-                    start_value_left = -current_max
+                if start_value_left < -max_value:
+                    start_value_left = -max_value
             else:
                 start_value_right += step_size
                 streak_right=0
-                if start_value_right > current_max:
-                    start_value_right = current_max
+                if start_value_right > max_value:
+                    start_value_right = max_value
         writer.writerow([block_label, trials, offset, keys, direction, response_time, statement, response_numeric])
         
         cross1.lineColor = feedback_color
