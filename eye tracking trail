@@ -66,11 +66,12 @@ for condition in block_conditions * 2 :
     block_msg = visual.TextStim(win, text=msg, color='black')
     block_msg.draw()
     win.flip()
+    trial_types = ['left'] * int(num_trials / 2) + ['right'] * int(num_trials / 2)
     event.waitKeys(keyList=['space'])
     
    
     for trials in range(num_trials):
-        staircase = random.choice(['left', 'right'])
+        staircase = trial_types[trials]
         if staircase == 'left':
             offset = start_value_left
             direction = 'left'
