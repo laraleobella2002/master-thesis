@@ -32,7 +32,7 @@ participant_name = expInfo['participantID']
 fileName= f'data_{participant_name}.csv'
 data_file = open(fileName, 'w', newline='')
 writer = csv.writer(data_file)
-writer.writerow(['label', 'trials', 'offset', 'keys', 'direction', 'response_time', 'statement','response_numeric'])
+writer.writerow(['label', 'trials', 'offset', 'keys', 'direction', 'response_time', 'accuracy','response_numeric'])
 
 mon = monitors.Monitor('tempMonitor')
 mon.setWidth(53)
