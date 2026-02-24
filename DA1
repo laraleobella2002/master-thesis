@@ -122,6 +122,73 @@ plt.savefig('easier_plot.png')
 
 _________________________________________________________________________________________________________________________________________
 
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+from scipy.stats import norm
+import psignifit as ps
+
+data = np.array([[0.0010, 45.0000, 90.0000], [0.0015, 50.0000, 90.0000],
+                 [0.0020, 44.0000, 90.0000], [0.0025, 44.0000, 90.0000],
+                 [0.0030, 52.0000, 90.0000], [0.0035, 53.0000, 90.0000],
+                 [0.0040, 62.0000, 90.0000], [0.0045, 64.0000, 90.0000],
+                 [0.0050, 76.0000, 90.0000], [0.0060, 79.0000, 90.0000],
+                 [0.0070, 88.0000, 90.0000], [0.0080, 90.0000, 90.0000],
+                 [0.0100, 90.0000, 90.0000]])
+
+res = ps.psignifit(data, sigmoid='norm', experiment_type='2AFC')
+
+# 1. Load data
+df = pd.read_csv('data_lara.csv')
+
+# 2. Psychometric Function Setup
+def psychometric_curve(x, mu, sigma):
+    return norm.cdf(x, loc=mu, scale=sigma)
+
+plt.figure(figsize=(10, 6))
+print("--- Psychometric Function Fit Results ---")
+
+# Group by label to loop through blocks easily
+for label, group in df.groupby('label'):
+    
+    # FIX: Check if the string contains 'right' to handle PsychoPy's bracket formatting "['right']"
+    summary = group.groupby('offset')['keys'].apply(
+        lambda x: x.astype(str).str.contains('right').mean()
+    ).reset_index(name='prob_right')
+    
+    x_data = summary['offset']
+    y_data = summary['prob_right']
+    
+    # Fit the curve
+    try:
+        (mu, sigma), _ = curve_fit(psychometric_curve, x_data, y_data, p0=[0, 0.5])
+        print(f"Block '{label}': PSE = {mu:.3f} | JND = {sigma:.3f}")
+    except RuntimeError:
+        print(f"Block '{label}': Optimal parameters not found.")
+        continue # Skip plotting the curve for this block if it fails
+        
+    # Plotting Data Points and Fit Line
+    x_fit = np.linspace(df['offset'].min(), df['offset'].max(), 100)
+    
+    # Plot the line first, then grab its auto-assigned color for the scatter points
+    p = plt.plot(x_fit, psychometric_curve(x_fit, mu, sigma), linestyle='-', label=f'{label} Fit (JND={sigma:.2f})')
+    line_color = p[0].get_color() 
+    
+    # Added alpha=0.6 to make overlapping points visible
+    plt.scatter(x_data, y_data, color=line_color, alpha=0.6, label=f'{label} Data')
+
+# 3. Format and save the plot
+plt.xlabel('Offset (Stimulus Intensity)')
+plt.ylabel('Proportion of "Right" Responses')
+plt.title('Psychometric Function by Block')
+plt.legend()
+plt.grid(True)
+plt.savefig('psychometric_function.png')
+plt.show()
+
+°°°°°°°°°°°°°°°°°°°°°°°°°!pip install psignifit°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° dont forget
+_______________________________________________________________________________________________________________________________________________________________
 
 
 
