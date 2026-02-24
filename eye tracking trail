@@ -9,7 +9,6 @@ tk = pylink.EyeLink('100.1.1.1')
 tk.openDataFile('trial.edf') 
 
 step_size = 0.05
-min_value= 0.03
 max_value=0.45
 num_trials = 60
 lineHight= 1.5
@@ -54,7 +53,7 @@ pylink.openGraphicsEx(genv)
 tk.doTrackerSetup()
 win.units = 'deg'
 
-for condition in block_conditions:
+for condition in block_conditions * 2 :
     streak_left = 0
     streak_right = 0
     current_spacing = condition['spacing']
@@ -167,15 +166,11 @@ for condition in block_conditions:
                 if streak_left==2:
                     start_value_left+= step_size
                     streak_left=0
-                    if start_value_left > -min_value:
-                        start_value_left = -min_value
             else:
                 streak_right+=1
                 if streak_right==2:
                     start_value_right -= step_size
                     streak_right=0
-                    if start_value_right < min_value:
-                        start_value_right = min_value
                
         else:
             statement = 'false'
