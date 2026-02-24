@@ -190,6 +190,18 @@ plt.show()
 °°°°°°°°°°°°°°°°°°°°°°°°°!pip install psignifit°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°° dont forget
 _______________________________________________________________________________________________________________________________________________________________
 
+import pandas as pd
+
+df = pd.read_csv('data_lala.csv')
+
+correct_df = df[df['accuracy'] == 'correct'].copy()
+
+correct_df['abs_offset'] = correct_df['offset'].abs().round(5)
+
+min_offset_per_block = correct_df.groupby('label')['abs_offset'].min()
+
+print(min_offset_per_block)
+
 
 
 
