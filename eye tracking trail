@@ -5,9 +5,14 @@ import os
 import pylink
 from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy 
 
+SCREEN_WIDTH = 1280 #need to check for the new screen 
+SCREEN_HEIGHT = 1120
+screen_center_x = SCREEN_WIDTH / 2
+screen_center_y = SCREEN_HEIGHT / 2
+fixation_window_radius = 100  # Define how far the eye can wander before it counts as looking away
 tk = pylink.EyeLink('100.1.1.1')
 tk.openDataFile('trial.edf') 
-
+    
 step_size = 0.05
 max_value=0.45
 num_trials = 60
@@ -18,8 +23,8 @@ streak_left = 0
 streak_right = 0
 
 block_conditions = [
-    {'label':'Block 1: Binocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 8},
-    {'label':'Block 2: Binocular_C', 'spacing': 0.5, 'crowdCount': 2, 'eccentricity': -8},
+    {'label':'Block 1: Binocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
+    {'label':'Block 2: Binocular_C', 'spacing': 0.5, 'crowdCount': 2, 'eccentricity': -5},
     {'label':'Block 3: Monocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
     {'label':'Block 4: Monocular_C', 'spacing': 0.5, 'crowdCount': 2, 'eccentricity': -5},
 ]
@@ -73,84 +78,126 @@ for condition in block_conditions * 2 :
    
     for trials in range(num_trials):
         staircase = trial_list[trials]
+
         if staircase == 'left':
             offset = start_value_left
             direction = 'left'
         else:
             offset = start_value_right
             direction = 'right'
+
+        trial_successful = False  #before every trial to controls the "trap" we built to force the participant to redo the trial if they look away.
+
            
-        vernier1 = visual.Line(
-            win=win,
-            lineColor='black',
-            lineWidth=lineThickness,
-            start=(current_eccentricity+ (offset), lineHight),
-            end=(current_eccentricity+ (offset), 0)
-            )
-
-        vernier2 = visual.Line(
-            win=win,
-            lineColor='black',
-            lineWidth=lineThickness,
-            start=(current_eccentricity, 0),
-            end=(current_eccentricity, -lineHight)
-            )
-            
-        cross1 = visual.Line(
-            win=win,
-            lineColor='black',
-            lineWidth=4,
-            start=(0,-0.3),
-            end=(0,0.3)
-            )
-           
-        cross2= visual.Line(
-            win=win,
-            lineColor='black',
-            lineWidth=4,
-            start=(-0.3, 0),
-            end=(0.3,0)
-            )
-
-        flankers = []
-        for i in range(-current_crowdCount, current_crowdCount + 1):
-            if i == 0:
-                continue
-            x_pos = current_eccentricity + (i * current_spacing)
-            if x_pos==offset:  
-                continue
-               
-            if offset<0:
-                direction='left'
-            else:
-                direction='right'
-
-            flanker = visual.Line(
+        while not trial_successful:
+                vernier1 = visual.Line(
                 win=win,
                 lineColor='black',
                 lineWidth=lineThickness,
-                start=(x_pos, -lineHight),
-                end=(x_pos, lineHight)
+                start=(current_eccentricity+ (offset), lineHight),
+                end=(current_eccentricity+ (offset), 0)
                 )
-            flankers.append(flanker)
-            
-        for flanker in flankers:
-            flanker.draw()
-        tk.startRecording(1, 1, 1, 1)
+    
+            vernier2 = visual.Line(
+                win=win,
+                lineColor='black',
+                lineWidth=lineThickness,
+                start=(current_eccentricity, 0),
+                end=(current_eccentricity, -lineHight)
+                )
+                
+            cross1 = visual.Line(
+                win=win,
+                lineColor='black',
+                lineWidth=4,
+                start=(0,-0.3),
+                end=(0,0.3)
+                )
+               
+            cross2= visual.Line(
+                win=win,
+                lineColor='black',
+                lineWidth=4,
+                start=(-0.3, 0),
+                end=(0.3,0)
+                )
+
+            flankers = []
+            for i in range(-current_crowdCount, current_crowdCount + 1):
+                if i == 0:
+                    continue
+                x_pos = current_eccentricity + (i * current_spacing)
+                if x_pos==offset:  
+                    continue
+                   
+                if offset<0:
+                    direction='left'
+                else:
+                    direction='right'
+    
+                flanker = visual.Line(
+                    win=win,
+                    lineColor='black',
+                    lineWidth=lineThickness,
+                    start=(x_pos, -lineHight),
+                    end=(x_pos, lineHight)
+                    )
+                flankers.append(flanker)
+                
+            for flanker in flankers:
+                flanker.draw()
+
         vernier1.draw()
         vernier2.draw()
         cross1.draw()
         cross2.draw()
+        tk.startRecording(1, 1, 1, 1)
+        pylink.msecDelay(100) # Give EyeLink 100ms to stabilize recording
         win.flip()
-        cross1.draw()
-        cross2.draw()
-        core.wait(stim_time)
-        win.flip()
+        gaze_broken = False
+        start_time = core.getTime()
+            
+        while core.getTime() - start_time < stim_time:
+            sample = tk.getNewestSample()
+            if sample is not None: #helps not to breakk the code if there is no data 
+                gaze = None
+                if sample.isRightSample():
+                    gaze = sample.getRightEye().getGaze()
+                elif sample.isLeftSample():
+                    gaze = sample.getLeftEye().getGaze()
+                    
+                if gaze is not None:
+                    gaze_x, gaze_y = gaze
+                        
+                    # -32768 is EyeLink's standard value for missing data (e.g., a blink)
+                    if gaze_x == -32768 or gaze_y == -32768:
+                        gaze_broken = True
+                        break
+                            
+                    #The Euclidean distance calculates the true mathematical radius, locking down an exact 100-pixel limit in every possible direction.
+                    dist = ((gaze_x - screen_center_x)**2 + (gaze_y - screen_center_y)**2)**0.5
+                        
+                    if dist > fixation_window_radius:
+                        gaze_broken = True
+                        break
         tk.stopRecording()
         cross1.draw()
         cross2.draw()
+        win.flip()
+        if gaze_broken:
+                warning = visual.TextStim(win, text='Please focus on the center cross.\n\nRestarting trial...', color='red')
+                warning.draw()
+                win.flip()
+                core.wait(1.0)
+                # We do NOT set trial_successful to True,>>>>so the while loop restarts this exact trial>>>>>
+                continue 
         rt_clock.reset()
-        core.wait(2) 
+        event.clearEvents() # Clear any keys they might have pressed by accident during the stimulus
+        response_time = rt_clock.getTime()
+        cross1.draw()
+        cross2.draw()
+        rt_clock.reset()
+        core.wait(0.5) 
         keys = event.waitKeys(keyList=['right', 'left','escape'])
         response_time = rt_clock.getTime()
 
@@ -198,6 +245,7 @@ for condition in block_conditions * 2 :
         core.wait(0.5)
         cross1.lineColor = 'black'
         cross2.lineColor = 'black'
+        trial_successful = True
         
         
 
