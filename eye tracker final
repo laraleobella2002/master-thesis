@@ -51,7 +51,7 @@ first_page = visual.TextStim(win, text='Hello\n\n1. Please keep looking at the b
 first_page.draw()
 win.flip()
 
-# Active Polling instead of event waitkeys
+# Active Polling instead of event waitkeys >>>> The "Polling" Method (while loop + getKeys())
 event.clearEvents()
 first_keys = []
 while not first_keys:
@@ -284,7 +284,7 @@ last_page = visual.TextStim(win, text='Thank you, press escape to exit', color='
 last_page.draw()
 win.flip()
 
-# active loop-
+# active loop
 event.clearEvents()
 last_keys = []
 while not last_keys:
