@@ -50,7 +50,10 @@ rt_clock = core.Clock()
 first_page = visual.TextStim(win, text='Hello\n\n1. Please keep looking at the black cross during the trials.\n2. If the upper line is to the right, press →\n3. If it is to the left, press ←\n\nPress A to start :)', color='black')
 first_page.draw()
 win.flip()
-event.waitKeys(keyList=['a']) 
+event.waitKeys(keyList=['a','escape'])
+if 'escape' in keys:
+    win.close()
+    core.quit()
 
 win.units = 'pix'
 genv = EyeLinkCoreGraphicsPsychoPy(tk, win)
@@ -71,7 +74,10 @@ for condition in block_conditions * 2 :
     block_msg = visual.TextStim(win, text=msg, color='black')
     block_msg.draw()
     win.flip()
-    event.waitKeys(keyList=['a'])
+    event.waitKeys(keyList=['a','escape'])
+    if 'escape' in keys:
+        win.close()
+        core.quit()
     trial_list = ['left'] * int(num_trials / 2) + ['right'] * int(num_trials / 2)
     random.shuffle(trial_list)
     
