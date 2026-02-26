@@ -28,11 +28,12 @@ block_conditions = [
     {'label':'Block 4: Monocular_C', 'spacing': 0.5, 'crowdCount': 2, 'eccentricity': -5},
 ]
 
-expInfo = {'participantID': ''}
+expInfo = {'participantID': '', 'session': ''}
 dlg = gui.DlgFromDict(dictionary=expInfo, title='Vernier Experiment')
 participant_name = expInfo['participantID']
+session_num = expInfo['session']
 
-fileName = f'data_{participant_name}.csv'
+fileName = f'data_{participant_name}_session_{session_num}.csv'
 data_file = open(fileName, 'w', newline='')
 writer = csv.writer(data_file)
 writer.writerow(['label', 'trials', 'offset', 'keys', 'direction', 'response_time', 'accuracy','response_numeric'])
@@ -67,7 +68,7 @@ pylink.openGraphicsEx(genv)
 tk.doTrackerSetup()
 win.units = 'deg'
 
-for condition in block_conditions * 2:
+for condition in block_conditions:
     streak_left = 0
     streak_right = 0
     current_spacing = condition['spacing']
