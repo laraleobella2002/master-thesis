@@ -43,6 +43,7 @@ mon = monitors.Monitor('tempMonitor')
 mon.setWidth(53)
 mon.setDistance(57.9)
 mon.setSizePix([1920, 1080])
+keys = event.waitKeys(keyList=['right', 'left','escape', 'a'])
 
 win = visual.Window(fullscr=True, color='white', units='deg', monitor=mon)
 win.mouseVisible = False
@@ -96,7 +97,7 @@ for condition in block_conditions * 2 :
 
            
         while not trial_successful:
-                vernier1 = visual.Line(
+            vernier1 = visual.Line(
                 win=win,
                 lineColor='black',
                 lineWidth=lineThickness,
@@ -204,7 +205,6 @@ for condition in block_conditions * 2 :
         cross2.draw()
         rt_clock.reset()
         core.wait(0.5) 
-        keys = event.waitKeys(keyList=['right', 'left','escape'])
         response_time = rt_clock.getTime()
 
         if 'escape' in keys:
