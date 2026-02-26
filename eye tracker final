@@ -295,8 +295,6 @@ while not last_keys:
 data_file.close()
 win.close()
 tk.closeDataFile()
-tk.closeDataFile()
 tk.receiveDataFile('trial.edf', f'eye_data_{participant_name}.edf')
 tk.close()
-core.quit()
 core.quit()
