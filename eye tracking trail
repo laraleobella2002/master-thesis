@@ -43,7 +43,6 @@ mon = monitors.Monitor('tempMonitor')
 mon.setWidth(53)
 mon.setDistance(57.9)
 mon.setSizePix([1920, 1080])
-keys = event.waitKeys(keyList=['right', 'left','escape', 'a'])
 
 win = visual.Window(fullscr=True, color='white', units='deg', monitor=mon)
 win.mouseVisible = False
@@ -51,6 +50,7 @@ rt_clock = core.Clock()
 first_page = visual.TextStim(win, text='Hello\n\n1. Please keep looking at the black cross during the trials.\n2. If the upper line is to the right, press →\n3. If it is to the left, press ←\n\nPress A to start :)', color='black')
 first_page.draw()
 win.flip()
+keys = event.waitKeys(keyList=['right', 'left','escape', 'a'])
 event.waitKeys(keyList=['a','escape'])
 if 'escape' in keys:
     win.close()
