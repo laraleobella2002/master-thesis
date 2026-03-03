@@ -2,28 +2,41 @@ goodness of fit
 from google.colab import files
 uploaded = files.upload()
 __________________________________________________________________________________________________________________________________
-offset zith trails: 
+offset with trails: 
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-df = pd.read_csv("data_0804.csv")
+# Load the data
+df = pd.read_csv("data_357_session_01.csv")
 
-condition = "Block 2: Binocular_C"
-subset = df[df["label"] == condition]
+# Get all unique conditions from the 'label' column
+conditions = df["label"].unique()
 
-plt.figure(figsize=(15, 6))
-plt.plot(subset["trials"], subset["offset"].abs(), marker="o", linestyle="-", color="green")
+# Create a figure with a 2x2 grid of subplots
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(16, 10))
+axes = axes.flatten()  # Flatten the 2x2 matrix into a 1D list for easy looping
 
-ax = plt.gca()
-exact_x_values = subset["trials"].unique()
-exact_y_values = subset["offset"].unique()
-ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(10))
+# Optional: Different colors for each condition
+colors = ['blue', 'green', 'red', 'purple']
 
+for i, condition in enumerate(conditions):
+    # Filter the subset for the current condition
+    subset = df[df["label"] == condition]
+    
+    ax = axes[i]
+    ax.plot(subset["trials"], subset["offset"].abs(), marker="o", linestyle="-", color=colors[i % len(colors)])
+    
+    # Set minor locators
+    ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(10))
+    
+    # Labels and Titles
+    ax.set_title(condition)
+    ax.set_xlabel("Trial")
+    ax.set_ylabel("Absolute Offset")
 
-plt.xlabel("Trial")
-plt.ylabel("Absolute Offset") 
-plt.title(condition)
+# Adjust the layout so plots don't overlap
+plt.tight_layout()
 plt.show()
 __________________________________________________________________________________________________________________________________________________________________
 #nawal 
@@ -239,6 +252,95 @@ plt.tight_layout() # Adjust layout so legend isn't cut off
 
 # Save and visualize
 plt.savefig('psychometric_functions_all.png')
+__________________________________________________________________________________________________________________________________________________________
+
+!pip install psignifit
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+import psignifit as ps
+import math
+
+# psignifit example data (kept from your original script)
+data = np.array([[0.0010, 45.0000, 90.0000], [0.0015, 50.0000, 90.0000],
+                 [0.0020, 44.0000, 90.0000], [0.0025, 44.0000, 90.0000],
+                 [0.0030, 52.0000, 90.0000], [0.0035, 53.0000, 90.0000],
+                 [0.0040, 62.0000, 90.0000], [0.0045, 64.0000, 90.0000],
+                 [0.0050, 76.0000, 90.0000], [0.0060, 79.0000, 90.0000],
+                 [0.0070, 88.0000, 90.0000], [0.0080, 90.0000, 90.0000],
+                 [0.0100, 90.0000, 90.0000]])
+
+res = ps.psignifit(data, sigmoid='norm', experiment_type='2AFC')
+
+# Load data and prepare columns
+df = pd.read_csv('data_357_session_01.csv')
+df['offset_clean'] = np.round(df['offset'], decimals=4)
+df['resp_right'] = (df['keys'] == "['right']").astype(int)
+
+# Define logistic function
+def logistic(x, alpha, beta):
+    return 1 / (1 + np.exp(-beta * (x - alpha)))
+
+# Get all unique block labels
+labels = df['label'].unique()
+
+# Determine grid size based on the number of conditions (e.g., 2x2 for 4 conditions)
+num_plots = len(labels)
+cols = 2
+rows = math.ceil(num_plots / cols)
+
+# Set up the figure and axes
+fig, axes = plt.subplots(nrows=rows, ncols=cols, figsize=(14, 6 * rows), squeeze=False)
+axes = axes.flatten()
+
+# Generate a distinct color for each label using a colormap
+colors = plt.cm.tab10(np.linspace(0, 1, num_plots))
+
+for i, label in enumerate(labels):
+    ax = axes[i]
+    
+    # Filter the dataset for the current block
+    subset = df[df['label'] == label]
+    
+    # Calculate proportions for this specific block
+    grouped = subset.groupby('offset_clean')['resp_right'].agg(['mean', 'count']).reset_index()
+    
+    try:
+        # Fit the logistic curve to the block's data
+        popt, pcov = curve_fit(logistic, grouped['offset_clean'], grouped['mean'], p0=[0, 10], maxfev=10000)
+        
+        # Generate smooth points for the curve
+        x_fit = np.linspace(grouped['offset_clean'].min(), grouped['offset_clean'].max(), 200)
+        y_fit = logistic(x_fit, *popt)
+        
+        # Plot the fitted smooth curve as a line on the specific subplot
+        ax.plot(x_fit, y_fit, '-', color=colors[i], linewidth=2.5)
+        
+        # Plot the raw data points as dots (slightly transparent)
+        ax.plot(grouped['offset_clean'], grouped['mean'], 'o', color=colors[i], markersize=6, alpha=0.5)
+        
+    except Exception as e:
+        print(f"Could not fit curve for {label}: {e}")
+        # Fallback: if data is too noisy for a curve fit, just connect the dots with a line
+        ax.plot(grouped['offset_clean'], grouped['mean'], 'o-', color=colors[i], linewidth=2.5)
+
+    # Add formatting and labels for each subplot
+    ax.axhline(y=0.5, color='gray', linestyle='--') # 50% Threshold line
+    ax.set_xlabel('Offset', fontsize=12)
+    ax.set_ylabel('Proportion of "Right" Responses', fontsize=12)
+    ax.set_title(f'{label}', fontsize=14, fontweight='bold')
+    ax.grid(True, alpha=0.3)
+
+# If there's an odd number of conditions, hide the empty subplots
+for j in range(i + 1, len(axes)):
+    fig.delaxes(axes[j])
+
+# Adjust layout and save
+plt.suptitle('Psychometric Functions per Condition', fontsize=18, fontweight='bold', y=1.02)
+plt.tight_layout()
+plt.savefig('psychometric_functions_subplots.png', bbox_inches='tight')
+plt.show()
 
 
 
