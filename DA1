@@ -74,14 +74,15 @@ ________________________________________________________________________________
 
 import pandas as pd
 
-df = pd.read_csv('data_lala.csv')
+df = pd.read_csv('data_6677_session_01.csv')
 
 correct_df = df[df['accuracy'] == 'correct'].copy()
 
-correct_df['abs_offset'] = correct_df['offset'].abs().round(5)
+correct_df['abs_offset'] = correct_df['offset'].abs()
 
 min_offset_per_block = correct_df.groupby('label')['abs_offset'].min()
 
+pd.set_option('display.precision', 30)
 print(min_offset_per_block)
 _______________________________________________________________________________________________________________________________________
 #plotting offset with trails ( to know best number of trails )
