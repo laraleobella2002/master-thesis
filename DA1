@@ -84,6 +84,7 @@ min_offset_per_block = correct_df.groupby('label')['abs_offset'].min()
 
 pd.set_option('display.precision', 30)
 print(min_offset_per_block)
+
 _______________________________________________________________________________________________________________________________________
 #plotting offset with trails ( to know best number of trails )
 
