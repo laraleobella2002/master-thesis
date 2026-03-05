@@ -4,6 +4,7 @@ import csv
 import os
 import pylink
 from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy 
+from datetime import datetime
 
 SCREEN_WIDTH = 1920 #need to check for the new screen 
 SCREEN_HEIGHT = 1080
@@ -34,6 +35,8 @@ dlg = gui.DlgFromDict(dictionary=expInfo, title='Vernier Experiment')
 participant_name = expInfo['participantID']
 session_num = expInfo['session']
 
+start_time01 = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
 fileName = f'data_{participant_name}_session_{session_num}.csv'
 data_file = open(fileName, 'w', newline='')
 writer = csv.writer(data_file)
@@ -43,10 +46,7 @@ writer.writerow(['label', 'trials', 'offset', 'keys', 'direction', 'response_tim
 fileName2 = f'data_{participant_name}_session_{session_num}.csv (parameters)'
 data_file2 = open(fileName2, 'w', newline='')
 writer_para= csv.writer(data_file2)
-writer_para.writerow(['participant_name', 'session_num', 'step_size', 'max_value', 'num_trials', 'lineHight', 'lineThickness','stim_time', 'spacing'])
-writer_para.writerow([participant_name, session_num, step_size, max_value, num_trials, lineHight, lineThickness,stim_time, spacing])
-data_file2.close()
-win.close()
+writer_para.writerow(['participant_name', 'session_num', 'step_size', 'max_value', 'num_trials', 'lineHight', 'lineThickness','stim_time', 'spacing', 'start_time', 'end_time'])
 
 
 mon = monitors.Monitor('tempMonitor')
@@ -301,7 +301,10 @@ last_keys = []
 while not last_keys:
     last_keys = event.getKeys(keyList=['escape'])
     core.wait(0.05)
-
+end_time01 = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+writer_para.writerow([participant_name, session_num, step_size, max_value, num_trials, lineHight, lineThickness,stim_time, spacing, start_time01, end_time01])
+data_file2.close()
+win.close()
 data_file.close()
 win.close()
 tk.closeDataFile()
