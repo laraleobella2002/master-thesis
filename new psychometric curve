@@ -1,0 +1,80 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.optimize import curve_fit
+
+
+sns.set_theme(style="whitegrid", context="paper", font_scale=1.2)
+
+df = pd.read_csv("data_nawal22_session_01.csv")
+
+# Convert string responses ('right'/'left') to boolean integers (1/0)
+df['is_right'] = (df['keys'] == 'right').astype(int)
+
+# 3. DEFINE THE MATHEMATICAL MODEL
+def psychometric_curve(x, alpha, beta):
+    return 1 / (1 + np.exp(-beta * (x - alpha))) #segmoid curve equation
+
+# 4. PLOTTING INITIALIZATION (names of conditions)
+blocks = df['label'].unique()
+
+# Create a 2x2 grid. >> sharey=True keeps the Y-axis aligned across all plots!
+fig, axes = plt.subplots(2, 2, figsize=(14, 10), sharey=True)
+axes = axes.flatten()
+
+# Get a beautiful default color palette from Seaborn
+colors = sns.color_palette("deep", len(blocks))
+
+# 5. ITERATE, FIT, AND PLOT, zip>> synchronization 
+for ax, block, color in zip(axes, blocks, colors):
+    
+    # Filter (data) for the specific block
+    block_data = df[df['label'] == block]
+    #__________________________________________________________#
+    
+    # Cleanly group by 'offset' using Pandas Named Aggregation
+    summary = block_data.groupby('offset')['is_right'].agg(
+        prob_right='mean', 
+        trial_count='count'
+    ).reset_index()
+    
+    x = summary['offset'].values
+    y = summary['prob_right'].values
+    sizes = summary['trial_count'].values
+    
+    # Fit the psychometric curve using SciPy
+    try:
+        popt, _ = curve_fit(psychometric_curve, x, y, p0=[0, 10], maxfev=10000)
+        alpha, beta = popt
+    except RuntimeError:
+        alpha, beta = 0, 1 # Safe fallback if the fit fails
+        
+    # Scatter plot: Note how Seaborn maps 'sizes' automatically to the dot size
+    sns.scatterplot(
+        x=x, y=y, 
+        size=sizes, sizes=(30, 250), 
+        color=color, alpha=0.8, ax=ax, 
+        legend=False, edgecolor="black"
+    )
+    
+    # Generate smooth curve line
+    x_smooth = np.linspace(x.min(), x.max(), 300)
+    y_smooth = psychometric_curve(x_smooth, alpha, beta)
+    ax.plot(x_smooth, y_smooth, color=color, linewidth=3, 
+            label=f"Threshold (α) = {alpha:.3f}\nSlope (β) = {beta:.1f}")
+    
+    # Add simple background guide lines for the 50% mark
+    ax.axhline(0.5, color='gray', linestyle='--', alpha=0.6, zorder=0)
+    ax.axvline(alpha, color='gray', linestyle='--', alpha=0.6, zorder=0)
+    
+    # Clean up titles and labels for this specific subplot
+    ax.set_title(block, fontsize=14, fontweight='bold', pad=10)
+    ax.set_xlabel("Offset (Stimulus Intensity)", fontsize=12)
+    ax.set_ylabel('P(Response = "Right")', fontsize=12)
+    ax.legend(loc="lower right", frameon=True, shadow=True)
+    ax.set_ylim(-0.05, 1.05)
+
+sns.despine() # This removes the top and right borders for a cleaner look
+plt.tight_layout()
+plt.show()
