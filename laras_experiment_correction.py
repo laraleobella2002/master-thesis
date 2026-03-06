@@ -1,0 +1,333 @@
+from psychopy import visual, event, core, monitors, gui
+import random
+import csv
+import os
+import pylink
+from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy 
+from datetime import datetime
+
+SCREEN_WIDTH = 1920 #need to check for the new screen 
+SCREEN_HEIGHT = 1080
+screen_center_x = SCREEN_WIDTH / 2
+screen_center_y = SCREEN_HEIGHT / 2
+fixation_window_radius = 100  # Define how far the eye can wander before it counts as looking away
+
+tk = pylink.EyeLink('100.1.1.1')
+tk.openDataFile('trial.edf') 
+    
+step_size = 0.01
+max_value = 0.25
+num_trials = 120
+lineHeight = 1.5
+lineThickness = 2
+stim_time = 0.25
+spacing = 0.3
+
+block_conditions = [
+    {'label':'Block 1: Binocular_NC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
+    {'label':'Block 2: Binocular_C', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': -5},
+    {'label':'Block 3: Monocular_NC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
+    {'label':'Block 4: Monocular_C', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': -5},
+]
+
+expInfo = {'participantID': '', 'session': ''}
+dlg = gui.DlgFromDict(dictionary=expInfo, title='Vernier Experiment')
+participant_name = expInfo['participantID']
+session_num = expInfo['session']
+
+start_time01 = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+fileName = f'data_{participant_name}_session_{session_num}.csv'
+data_file = open(fileName, 'w', newline='')
+writer = csv.writer(data_file)
+writer.writerow(['label', 'trials', 'offset', 'keys', 'direction', 'response_time', 'accuracy','response_numeric'])
+
+
+fileName2 = f'parameters_{participant_name}_session_{session_num}.csv'
+data_file2 = open(fileName2, 'w', newline='')
+writer_para= csv.writer(data_file2)
+writer_para.writerow(['participant_name', 'session_num', 'step_size', 'max_value', 'num_trials', 'lineHeight', 'lineThickness','stim_time', 'spacing', 'start_time', 'end_time'])
+
+
+mon = monitors.Monitor('tempMonitor')
+mon.setWidth(53)
+mon.setDistance(57.9)
+mon.setSizePix([1920, 1080])
+
+fixation_window_radius = 100
+tk.sendCommand("screen_pixel_coords = 0 0 1919 1079")
+tk.sendMessage("DISPLAY_COORDS 0 0 1919 1079")
+
+win = visual.Window(fullscr=True, color='white', units='deg', monitor=mon)
+win.mouseVisible = False
+rt_clock = core.Clock()
+
+first_page = visual.TextStim(win, text='Hello\n\n1. Please keep looking at the black cross during the trials.\n2. If the upper line is to the right, press →\n3. If it is to the left, press ←', color='black')
+first_page.draw()
+win.flip()
+
+# Active Polling instead of event waitkeys >>>> The "Polling" Method (while loop + getKeys())
+event.clearEvents()
+first_keys = []
+while not first_keys:
+    first_keys = event.getKeys(keyList=['down', 'q', 'space', 'escape'])
+    core.wait(0.05)
+if 'escape' in first_keys:
+    win.close()
+    core.quit()
+
+win.units = 'pix'
+genv = EyeLinkCoreGraphicsPsychoPy(tk, win)
+pylink.openGraphicsEx(genv)
+tk.doTrackerSetup()
+win.units = 'deg'
+
+for condition in block_conditions:
+    streak_left = 0
+    streak_right = 0
+    current_spacing = condition['spacing']
+    current_crowdCount = condition['crowdCount']
+    current_eccentricity = condition['eccentricity']
+    block_label = condition['label']
+    start_value_right = 0.2
+    start_value_left = -0.2
+    
+    msg = f"Starting {block_label}\n Press DOWN ARROW to continue."
+    block_msg = visual.TextStim(win, text=msg, color='black')
+    block_msg.draw()
+    win.flip()
+    
+    # same here for active loop
+    event.clearEvents()
+    block_keys = []
+    while not block_keys:
+        block_keys = event.getKeys(keyList=['down', 'q', 'space', 'escape'])
+        core.wait(0.05)
+    if 'escape' in block_keys:
+        win.close()
+        core.quit()
+
+        
+    trial_list = ['left'] * int(num_trials / 2) + ['right'] * int(num_trials / 2)
+    random.shuffle(trial_list)
+    
+    for trials in range(num_trials):
+        staircase = trial_list[trials]
+
+        if staircase == 'left':
+            offset = start_value_left
+            direction = 'left'
+        else:
+            offset = start_value_right
+            direction = 'right'
+
+        trial_successful = False  
+            
+        while not trial_successful:
+            vernier1 = visual.Line(
+                win=win,
+                lineColor='black',
+                lineWidth=lineThickness,
+                start=(current_eccentricity + (offset), lineHeight),
+                end=(current_eccentricity + (offset), 0)
+            )
+    
+            vernier2 = visual.Line(
+                win=win,
+                lineColor='black',
+                lineWidth=lineThickness,
+                start=(current_eccentricity, 0),
+                end=(current_eccentricity, -lineHeight)
+            )
+                
+            cross1 = visual.Line(
+                win=win,
+                lineColor='black',
+                lineWidth=4,
+                start=(0, -0.3),
+                end=(0, 0.3)
+            )
+                
+            cross2 = visual.Line(
+                win=win,
+                lineColor='black',
+                lineWidth=4,
+                start=(-0.3, 0),
+                end=(0.3, 0)
+            )
+
+            flankers = []
+            for i in range(-current_crowdCount, current_crowdCount + 1):
+                if i == 0:
+                    continue
+                x_pos = current_eccentricity + (i * current_spacing)
+                if x_pos == current_eccentricity + offset:
+                    continue
+                    
+                flanker = visual.Line(
+                    win=win,
+                    lineColor='black',
+                    lineWidth=lineThickness,
+                    start=(x_pos, -lineHeight),
+                    end=(x_pos, lineHeight)
+                )
+                flankers.append(flanker)
+            
+            tk.sendMessage(f"BLOCK {block_label}")
+            tk.sendMessage(f"TRIALID {trials}")
+            tk.startRecording(1, 1, 1, 1)
+            pylink.msecDelay(100)
+            gaze_broken = False            
+
+            stim_frames = int(stim_time * win.getActualFrameRate())
+
+            for frame in range(stim_frames):
+
+                sample = tk.getNewestSample()
+
+                if sample is not None:
+
+                    if sample.isRightSample():
+                        gaze = sample.getRightEye().getGaze()
+                    elif sample.isLeftSample():
+                        gaze = sample.getLeftEye().getGaze()
+                    else:
+                        gaze = None
+
+                    if gaze is not None:
+
+                        gaze_x, gaze_y = gaze
+
+                        if gaze_x == -32768 or gaze_y == -32768:
+                            gaze_broken = True
+                            break
+
+                        dist = ((gaze_x - screen_center_x)**2 + (gaze_y - screen_center_y)**2)**0.5
+
+                        if dist > fixation_window_radius:
+                            gaze_broken = True
+                            break
+
+                for flanker in flankers:
+                    flanker.draw()
+
+                vernier1.draw()
+                vernier2.draw()
+                cross1.draw()
+                cross2.draw()
+
+                if frame == 0:
+                    tk.sendMessage("STIM_ONSET")
+
+                win.flip()
+                            
+            tk.stopRecording()
+            pylink.msecDelay(50)
+            cross1.draw()
+            cross2.draw()
+            win.flip()
+
+            
+            if gaze_broken:
+                warning = visual.TextStim(win, text='Please focus on the center cross.\n\nRestarting trial...', color='red')
+                warning.draw()
+                win.flip()
+                
+                #EMERGENCY EXIT DURING WARNING 
+                timer = core.Clock()
+                while timer.getTime() < 1.0:
+                    trap_keys = event.getKeys(keyList=['escape'])
+                    if 'escape' in trap_keys:
+                        win.close()
+                        core.quit()
+                    core.wait(0.05)
+                    
+                continue 
+             
+
+            event.clearEvents()
+            rt_clock.reset()
+
+            keys = []
+            while not keys:
+                keys = event.getKeys(keyList=['right','left','escape'])
+                core.wait(0.01)
+
+            response_time = rt_clock.getTime()
+            
+            # active loop
+            event.clearEvents()
+            keys = []
+            while not keys:
+                keys = event.getKeys(keyList=['right', 'left', 'escape'])
+                core.wait(0.01) # Faster check for accurate RT
+                
+            response_time = rt_clock.getTime()
+
+            if 'escape' in keys:
+                win.close()
+                core.quit()
+          
+
+            key_pressed = keys[0]
+            tk.sendMessage(f"RESPONSE {key_pressed}")
+            if key_pressed == direction:
+                statement = 'true'
+                response_numeric = 1
+                feedback_color = 'green'
+                if staircase == 'left':
+                    streak_left += 1
+                    if streak_left == 2:
+                        start_value_left += step_size
+                        streak_left = 0
+                else:
+                    streak_right += 1
+                    if streak_right == 2:
+                        start_value_right -= step_size
+                        streak_right = 0
+            else:
+                statement = 'false'
+                feedback_color = 'red'
+                response_numeric = 0
+                if staircase == 'left':
+                    start_value_left -= step_size
+                    streak_left = 0
+                    if start_value_left < -max_value:
+                        start_value_left = -max_value
+                else:
+                    start_value_right += step_size
+                    streak_right = 0
+                    if start_value_right > max_value:
+                        start_value_right = max_value
+                        
+            writer.writerow([block_label, trials, offset, key_pressed, direction, response_time, statement, response_numeric])
+            
+            cross1.lineColor = feedback_color
+            cross2.lineColor = feedback_color
+            cross1.draw()
+            cross2.draw()
+            win.flip()
+            core.wait(0.5)
+            cross1.lineColor = 'black'
+            cross2.lineColor = 'black'
+            trial_successful = True
+            
+last_page = visual.TextStim(win, text='Thank you, press escape to exit', color='black')
+last_page.draw()
+win.flip()
+
+# active loop
+event.clearEvents()
+last_keys = []
+while not last_keys:
+    last_keys = event.getKeys(keyList=['escape'])
+    core.wait(0.05)
+end_time01 = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+writer_para.writerow([participant_name, session_num, step_size, max_value, num_trials, lineHeight, lineThickness,stim_time, spacing, start_time01, end_time01])
+data_file.close()
+data_file2.close()
+win.close()
+tk.closeDataFile()
+tk.receiveDataFile('trial.edf', f'eye_data_{participant_name}.edf')
+tk.close()
+core.quit()
