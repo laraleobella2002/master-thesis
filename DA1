@@ -84,30 +84,6 @@ min_offset_per_block = correct_df.groupby('label')['abs_offset'].min()
 
 pd.set_option('display.precision', 30)
 print(min_offset_per_block)
-
-_______________________________________________________________________________________________________________________________________
-#plotting offset with trails ( to know best number of trails )
-
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
-from scipy.stats import norm
-import seaborn as sns
-
-df = pd.read_csv('data_55.csv')
-
-sns.relplot(
-    data=df, 
-    x='trials', 
-    y='offset', 
-    col='label',   
-    col_wrap=2,    
-    kind='line',   
-    marker='o'   
-)
-plt.savefig('easier_plot.png')
-
 _________________________________________________________________________________________________________________________________________
 plotting normal :
 
