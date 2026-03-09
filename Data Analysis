@@ -1,7 +1,43 @@
 goodness of fit
 from google.colab import files
 uploaded = files.upload()
-https://colab.research.google.com/notebooks/intro.ipynb
+_________________________________________________________________________________________________________________________________________________________________________________________
+equation
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+df = pd.read_csv('data_nawal22_session_01.csv')
+
+correct_df = df[df['accuracy'] == 'correct'].copy()
+correct_df['abs_offset'] = correct_df['offset'].abs()
+min_offset_per_block = correct_df.groupby('label')['abs_offset'].min()
+
+print("Minimum Offsets:")
+print(min_offset_per_block)
+
+binocular_uc = min_offset_per_block.get('Block 1: Binocular_UC', 0)
+binocular_c  = min_offset_per_block.get('Block 2: Binocular_C', 0)
+monocular_uc = min_offset_per_block.get('Block 3: Monocular_UC', 0)
+monocular_c  = min_offset_per_block.get('Block 4: Monocular_C', 0)
+
+max_val = max(binocular_uc, binocular_c, monocular_uc, monocular_c)
+y_limit = max_val * 1.2 if max_val > 0 else 0.1 # Add 20% headroom
+
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+
+ax1.bar(['Monocular', 'Binocular'], [monocular_uc, binocular_uc], color=['lightblue', 'steelblue'])
+ax1.set_title('Uncrowded')
+ax1.set_ylabel('Minimum Absolute Offset')
+ax1.set_ylim(0, y_limit) # Ensures visual consistency between charts
+
+ax2.bar(['Monocular', 'Binocular'], [monocular_c, binocular_c], color=['lightcoral', 'firebrick'])
+ax2.set_title('Crowded')
+ax2.set_ylabel('Minimum Absolute Offset')
+ax2.set_ylim(0, y_limit)
+
+plt.suptitle('Vernier Thresholds: Monocular vs Binocular', fontsize=14)
+plt.tight_layout()
 __________________________________________________________________________________________________________________________________
 offset with trails: 
 import pandas as pd
