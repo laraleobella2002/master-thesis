@@ -1,0 +1,185 @@
+from google.colab import files
+uploaded = files.upload()
+_________________________________________________________________________________________________________________________________________________________
+#Equation plotting 
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+df = pd.read_csv('data_nawal22_session_01.csv')
+
+correct_df = df[df['accuracy'] == 'correct'].copy()
+correct_df['abs_offset'] = correct_df['offset'].abs()
+min_offset_per_block = correct_df.groupby('label')['abs_offset'].min()
+
+pd.set_option('display.precision', 30)
+print(min_offset_per_block)
+print("Minimum Offsets:")
+
+Binocular_Standard = min_offset_per_block.get('Block 1: Binocular_Standard')
+Binocular_Crowded  = min_offset_per_block.get('Block 2: Binocular_Crowded')
+Monocular_Standard = min_offset_per_block.get('Block 3: Monocular_Standard')
+Monocular_Crowded  = min_offset_per_block.get('Block 4: Monocular_Crowded')
+
+plt.figure(figsize=(8, 7))
+
+plt.scatter(Binocular_Standard, Binocular_Crowded, color='lightblue', s=150, label='Binocular')
+
+plt.scatter(Monocular_Standard, Monocular_Crowded, color='pink', s=150, label='Monocular')
+
+plt.text(Binocular_Standard, Binocular_Standard, '  Binocular', fontsize=12)
+plt.text(Monocular_Standard, Monocular_Crowded, '  Monocular', fontsize=12)
+
+max_val = max(Binocular_Standard, Binocular_Crowded, Monocular_Standard, Monocular_Crowded)
+axis_limit = max_val * 1.2 if max_val > 0 else 0.1 
+
+# Add a diagonal dashed line (y=x) as a reference. 
+# Points above this line mean Crowded > Standard.
+# k here is for black 
+plt.plot([0, axis_limit], [0, axis_limit], 'k--', alpha=1, label='Equal Thresholds (y=x)')
+
+plt.xlim(0, axis_limit)
+plt.ylim(0, axis_limit)
+plt.xlabel('Smallest Absolute Offset (Standard)', fontsize=12)
+plt.ylabel('Smallest Absolute Offset (Crowded)', fontsize=12)
+plt.title('Vernier Thresholds: Crowded vs Standard', fontsize=14)
+
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.legend(loc='upper left')
+plt.tight_layout() 
+plt.savefig('vernier_results.png', dpi=300, bbox_inches='tight')
+plt.show()
+_____________________________________________________________________________________________________________________________________________________________________________________________________________
+#offset with trails: 
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+
+# Load the data
+df = pd.read_csv("data_357_session_01.csv")
+
+# Get all unique conditions from the 'label' column
+conditions = df["label"].unique()
+
+# Create a figure with a 2x2 grid of subplots
+fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(16, 10))
+axes = axes.flatten()  # Flatten the 2x2 matrix into a 1D list for easy looping
+
+# Optional: Different colors for each condition
+colors = ['blue', 'green', 'red', 'purple']
+
+for i, condition in enumerate(conditions):
+    # Filter the subset for the current condition
+    subset = df[df["label"] == condition]
+    
+    ax = axes[i]
+    ax.plot(subset["trials"], subset["offset"].abs(), marker="o", linestyle="-", color=colors[i % len(colors)])
+    
+    # Set minor locators
+    ax.xaxis.set_minor_locator(ticker.AutoMinorLocator(10))
+    
+    # Labels and Titles
+    ax.set_title(condition)
+    ax.set_xlabel("Trial")
+    ax.set_ylabel("Absolute Offset")
+
+# Adjust the layout so plots don't overlap
+plt.tight_layout()
+plt.show()
+________________________________________________________________________________________________________________________________________________________________________________________
+#smallest offset in each block
+
+import pandas as pd
+
+df = pd.read_csv('data_6677_session_01.csv')
+
+correct_df = df[df['accuracy'] == 'correct'].copy()
+
+correct_df['abs_offset'] = correct_df['offset'].abs()
+
+min_offset_per_block = correct_df.groupby('label')['abs_offset'].min()
+
+pd.set_option('display.precision', 30)
+print(min_offset_per_block)
+___________________________________________________________________________________________________________________________________________________________________________________________________
+#new psychometric cruve 
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.optimize import curve_fit
+
+
+sns.set_theme(style="whitegrid", context="paper", font_scale=1.2)
+
+df = pd.read_csv("data_nawal22_session_01.csv")
+
+# Convert string responses ('right'/'left') to boolean integers (1/0)
+df['is_right'] = (df['keys'] == 'right').astype(int)
+
+# 3. DEFINE THE MATHEMATICAL MODEL
+def psychometric_curve(x, alpha, beta):
+    return 1 / (1 + np.exp(-beta * (x - alpha))) #segmoid curve equation
+
+# 4. PLOTTING INITIALIZATION (names of conditions)
+blocks = df['label'].unique()
+
+# Create a 2x2 grid. >> sharey=True keeps the Y-axis aligned across all plots!
+fig, axes = plt.subplots(2, 2, figsize=(14, 10), sharey=True)
+axes = axes.flatten()
+
+# Get a beautiful default color palette from Seaborn
+colors = sns.color_palette("deep", len(blocks))
+
+# 5. ITERATE, FIT, AND PLOT, zip>> synchronization 
+for ax, block, color in zip(axes, blocks, colors):
+    
+    # Filter (data) for the specific block
+    block_data = df[df['label'] == block]
+    #__________________________________________________________#
+    
+    # Cleanly group by 'offset' using Pandas Named Aggregation
+    summary = block_data.groupby('offset')['is_right'].agg(
+        prob_right='mean', 
+        trial_count='count'
+    ).reset_index()
+    
+    x = summary['offset'].values
+    y = summary['prob_right'].values
+    sizes = summary['trial_count'].values
+    
+    # Fit the psychometric curve using SciPy
+    try:
+        popt, _ = curve_fit(psychometric_curve, x, y, p0=[0, 10], maxfev=10000)
+        alpha, beta = popt
+    except RuntimeError:
+        alpha, beta = 0, 1 # Safe fallback if the fit fails
+        
+    # Scatter plot: Note how Seaborn maps 'sizes' automatically to the dot size
+    sns.scatterplot(
+        x=x, y=y, 
+        size=sizes, sizes=(30, 250), 
+        color=color, alpha=0.8, ax=ax, 
+        legend=False, edgecolor="black"
+    )
+    
+    # Generate smooth curve line
+    x_smooth = np.linspace(x.min(), x.max(), 300)
+    y_smooth = psychometric_curve(x_smooth, alpha, beta)
+    ax.plot(x_smooth, y_smooth, color=color, linewidth=3, 
+            label=f"Threshold (α) = {alpha:.3f}\nSlope (β) = {beta:.1f}")
+    
+    # Add simple background guide lines for the 50% mark
+    ax.axhline(0.5, color='gray', linestyle='--', alpha=0.6, zorder=0)
+    ax.axvline(alpha, color='gray', linestyle='--', alpha=0.6, zorder=0)
+    
+    # Clean up titles and labels for this specific subplot
+    ax.set_title(block, fontsize=14, fontweight='bold', pad=10)
+    ax.set_xlabel("Offset (Stimulus Intensity)", fontsize=12)
+    ax.set_ylabel('P(Response = "Right")', fontsize=12)
+    ax.legend(loc="lower right", frameon=True, shadow=True)
+    ax.set_ylim(-0.05, 1.05)
+
+sns.despine() # This removes the top and right borders for a cleaner look
+plt.tight_layout()
+plt.show()
