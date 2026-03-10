@@ -24,10 +24,10 @@ stim_time = 0.25
 spacing = 0.3
 
 block_conditions = [
-    {'label':'Block 1: Binocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
-    {'label':'Block 2: Binocular_C', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': -5},
-    {'label':'Block 3: Monocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
-    {'label':'Block 4: Monocular_C', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': -5},
+    {'label':'Block 1: Binocular Standard', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
+    {'label':'Block 2: Binocular Crowded', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': -5},
+    {'label':'Block 3: Monocular Standard', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
+    {'label':'Block 4: Monocular Crowded', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': -5},
 ]
 
 expInfo = {'participantID': '', 'session': ''}
