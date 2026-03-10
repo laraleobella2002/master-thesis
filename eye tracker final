@@ -43,7 +43,7 @@ writer = csv.writer(data_file)
 writer.writerow(['label', 'trials', 'offset', 'keys', 'direction', 'response_time', 'accuracy','response_numeric'])
 
 
-fileName2 = f'data_{participant_name}_session_{session_num}.csv (parameters)'
+fileName2 = f'data_{participant_name}_session_{session_num}_parameters.csv'
 data_file2 = open(fileName2, 'w', newline='')
 writer_para= csv.writer(data_file2)
 writer_para.writerow(['participant_name', 'session_num', 'step_size', 'max_value', 'num_trials', 'lineHight', 'lineThickness','stim_time', 'spacing', 'start_time', 'end_time'])
@@ -66,7 +66,7 @@ win.flip()
 event.clearEvents()
 first_keys = []
 while not first_keys:
-    first_keys = event.getKeys(keyList=['a', 'q', 'space', 'escape'])
+    first_keys = event.getKeys(keyList=['l', 'space', 'escape'])
     core.wait(0.05)
 if 'escape' in first_keys:
     win.close()
@@ -88,7 +88,7 @@ for condition in block_conditions:
     start_value_right = 0.2
     start_value_left = -0.2
     
-    msg = f"Starting {block_label}\n Press A to continue."
+    msg = f"Starting {block_label}\n Press L to continue."
     block_msg = visual.TextStim(win, text=msg, color='black')
     block_msg.draw()
     win.flip()
@@ -97,7 +97,7 @@ for condition in block_conditions:
     event.clearEvents()
     block_keys = []
     while not block_keys:
-        block_keys = event.getKeys(keyList=['a', 'q', 'space', 'escape'])
+        block_keys = event.getKeys(keyList=['l', 'space', 'escape'])
         core.wait(0.05)
     if 'escape' in block_keys:
         win.close()
