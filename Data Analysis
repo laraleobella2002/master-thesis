@@ -18,21 +18,21 @@ pd.set_option('display.precision', 30)
 print(min_offset_per_block)
 print("Minimum Offsets:")
 
-binocular_uc = min_offset_per_block.get('Block 1: Binocular_UC')
-binocular_c  = min_offset_per_block.get('Block 2: Binocular_C')
-monocular_uc = min_offset_per_block.get('Block 3: Monocular_UC')
-monocular_c  = min_offset_per_block.get('Block 4: Monocular_C')
+Binocular_Standard = min_offset_per_block.get('Block 1: Binocular_Standard')
+Binocular_Crowded  = min_offset_per_block.get('Block 2: Binocular_Crowded')
+Monocular_Standard = min_offset_per_block.get('Block 3: Monocular_Standard')
+Monocular_Crowded  = min_offset_per_block.get('Block 4: Monocular_Crowded')
 
 plt.figure(figsize=(8, 7))
 
-plt.scatter(binocular_uc, binocular_c, color='lightblue', s=150, label='Binocular')
+plt.scatter(Binocular_Standard, Binocular_Crowded, color='lightblue', s=150, label='Binocular')
 
-plt.scatter(monocular_uc, monocular_c, color='pink', s=150, label='Monocular')
+plt.scatter(Monocular_Standard, Monocular_Crowded, color='pink', s=150, label='Monocular')
 
-plt.text(binocular_uc, binocular_c, '  Binocular', fontsize=12)
-plt.text(monocular_uc, monocular_c, '  Monocular', fontsize=12)
+plt.text(Binocular_Standard, Binocular_Standard, '  Binocular', fontsize=12)
+plt.text(Monocular_Standard, Monocular_Crowded, '  Monocular', fontsize=12)
 
-max_val = max(binocular_uc, binocular_c, monocular_uc, monocular_c)
+max_val = max(Binocular_Standard, Binocular_Crowded, Monocular_Standard, Monocular_Crowded)
 axis_limit = max_val * 1.2 if max_val > 0 else 0.1 
 
 # Add a diagonal dashed line (y=x) as a reference. 
@@ -115,8 +115,6 @@ for i in range(len(data)):
     
 for name, accuracy in grouped_data.items():
         print(f"{name}: {accuracy}")
-
-
 
 ________________________________________________________________________________________________________
 #smallest offset in each block
