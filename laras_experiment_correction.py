@@ -1,12 +1,11 @@
 from psychopy import visual, event, core, monitors, gui
 import random
 import csv
-import os
 import pylink
 from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy 
 from datetime import datetime
 
-SCREEN_WIDTH = 1920 #need to check for the new screen 
+SCREEN_WIDTH = 1920 # need to check for the new screen 
 SCREEN_HEIGHT = 1080
 screen_center_x = SCREEN_WIDTH / 2
 screen_center_y = SCREEN_HEIGHT / 2
@@ -14,7 +13,7 @@ fixation_window_radius = 100  # Define how far the eye can wander before it coun
 
 tk = pylink.EyeLink('100.1.1.1')
 tk.openDataFile('trial.edf') 
-    
+
 step_size = 0.01
 max_value = 0.25
 num_trials = 120
@@ -24,10 +23,10 @@ stim_time = 0.25
 spacing = 0.3
 
 block_conditions = [
-    {'label':'Block 1: Binocular_NC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
-    {'label':'Block 2: Binocular_C', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': -5},
-    {'label':'Block 3: Monocular_NC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
-    {'label':'Block 4: Monocular_C', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': -5},
+    {'label':'Binocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
+    {'label':'Binocular_C', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': -5},
+    {'label':'Monocular_UC', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
+    {'label':'Monocular_C', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': -5},
 ]
 
 expInfo = {'participantID': '', 'session': ''}
@@ -53,6 +52,7 @@ mon = monitors.Monitor('tempMonitor')
 mon.setWidth(53)
 mon.setDistance(57.9)
 mon.setSizePix([1920, 1080])
+mon.saveMon()
 
 fixation_window_radius = 100
 tk.sendCommand("screen_pixel_coords = 0 0 1919 1079")
@@ -163,7 +163,7 @@ for condition in block_conditions:
                 x_pos = current_eccentricity + (i * current_spacing)
                 if x_pos == current_eccentricity + offset:
                     continue
-                    
+                
                 flanker = visual.Line(
                     win=win,
                     lineColor='black',
@@ -179,7 +179,12 @@ for condition in block_conditions:
             pylink.msecDelay(100)
             gaze_broken = False            
 
-            stim_frames = int(stim_time * win.getActualFrameRate())
+            frame_rate = win.getActualFrameRate()
+
+            if frame_rate is None:
+                frame_rate = 60
+
+            stim_frames = int(stim_time * frame_rate)
 
             for frame in range(stim_frames):
 
@@ -221,7 +226,6 @@ for condition in block_conditions:
 
                 win.flip()
                             
-            tk.stopRecording()
             pylink.msecDelay(50)
             cross1.draw()
             cross2.draw()
@@ -254,15 +258,6 @@ for condition in block_conditions:
                 core.wait(0.01)
 
             response_time = rt_clock.getTime()
-            
-            # active loop
-            event.clearEvents()
-            keys = []
-            while not keys:
-                keys = event.getKeys(keyList=['right', 'left', 'escape'])
-                core.wait(0.01) # Faster check for accurate RT
-                
-            response_time = rt_clock.getTime()
 
             if 'escape' in keys:
                 win.close()
@@ -271,6 +266,8 @@ for condition in block_conditions:
 
             key_pressed = keys[0]
             tk.sendMessage(f"RESPONSE {key_pressed}")
+            tk.stopRecording()
+            pylink.msecDelay(50)
             if key_pressed == direction:
                 statement = 'true'
                 response_numeric = 1
