@@ -1,0 +1,58 @@
+#avarege of last 20 trails 
+import pandas as pd
+
+df = pd.read_csv('data_p3_session_01.csv')
+
+last_20 = df.groupby('label').tail(20)
+
+average_offsets = last_20.groupby('label')['offset'].mean().abs().reset_index()
+
+print(average_offsets)
+______________________________________________________________________________________________________________________________________________________________________________________________________________
+
+#plotting the avarege 
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
+df = pd.read_csv('data_p4_session_02.csv')
+
+last_20 = df.groupby('label').tail(20)
+
+# Corrected: Apply .abs() to the 'offset' Series before resetting the index
+average_offsets = last_20.groupby('label')['offset'].mean().abs().reset_index()
+
+print(average_offsets)
+
+Binocular_Standard = average_offsets[average_offsets['label'] == 'Block 1: Binocular_Standard']['offset'].iloc[0]
+Binocular_Crowded = average_offsets[average_offsets['label'] == 'Block 2: Binocular_Crowded']['offset'].iloc[0]
+Monocular_Standard = average_offsets[average_offsets['label'] == 'Block 3: Monocular_Standard']['offset'].iloc[0]
+Monocular_Crowded = average_offsets[average_offsets['label'] == 'Block 4: Monocular_Crowded']['offset'].iloc[0]
+
+plt.figure(figsize=(8, 7))
+
+plt.scatter(Binocular_Standard, Binocular_Crowded, color='lightblue', s=150, label='Binocular')
+plt.scatter(Monocular_Standard, Monocular_Crowded, color='pink', s=150, label='Monocular')
+
+plt.text(Binocular_Standard, Binocular_Crowded, '  Binocular', verticalalignment='bottom', fontsize=12)
+plt.text(Monocular_Standard, Monocular_Crowded, '  Monocular', verticalalignment='bottom', fontsize=12)
+
+max_val = max(Binocular_Standard, Binocular_Crowded, Monocular_Standard, Monocular_Crowded)
+axis_limit = max_val * 1.2 if max_val > 0 else 0.1
+
+
+# Formatting
+plt.xlim(0, axis_limit)
+plt.ylim(0, axis_limit)
+plt.xlabel('avarege of last 20 trails(Standered)', fontsize=12)
+plt.ylabel('avarege of last 20 trails(Crowded)', fontsize=12)
+plt.title('Vernier Thresholds: Crowded vs Standard', fontsize=14, fontweight='bold')
+
+plt.grid(True, linestyle=':', alpha=0.7)
+plt.legend(loc='upper left', frameon=True)
+plt.tight_layout()
+
+plt.show()
+______________________________________________________________________________________________________________________________________________________________________________________
+
+#instruction paper 
