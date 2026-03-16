@@ -19,7 +19,6 @@ df = pd.read_csv('data_p4_session_02.csv')
 
 last_20 = df.groupby('label').tail(20)
 
-# Corrected: Apply .abs() to the 'offset' Series before resetting the index
 average_offsets = last_20.groupby('label')['offset'].mean().abs().reset_index()
 
 print(average_offsets)
