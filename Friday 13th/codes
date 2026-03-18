@@ -54,4 +54,54 @@ plt.tight_layout()
 plt.show()
 ______________________________________________________________________________________________________________________________________________________________________________________
 
+plotting all the dots 
+
+import matplotlib.pyplot as plt
+import pandas as pd
+import glob
+
+file_list = glob.glob('data_p*_session_*.csv')
+file_list = [f for f in file_list if '(' not in f and '_parameters.csv' not in f]
+
+df_list = []
+for file in file_list:
+    indv_df = pd.read_csv(file)
+    indv_last_20 = indv_df.groupby('label').tail(20)
+    average_offsets = indv_last_20.groupby('label')['offset'].mean().abs().reset_index()
+    df_list.append(average_offsets)
+
+plt.figure(figsize=(8, 7))
+
+#enumerate gives item and its position number in the list
+global_max = 0
+for i, df in enumerate(df_list):
+    Binocular_Standard = df[df['label'] == 'Block 1: Binocular_Standard']['offset'].iloc[0]
+    Binocular_Crowded = df[df['label'] == 'Block 2: Binocular_Crowded']['offset'].iloc[0]
+    Monocular_Standard = df[df['label'] == 'Block 3: Monocular_Standard']['offset'].iloc[0]
+    Monocular_Crowded = df[df['label'] == 'Block 4: Monocular_Crowded']['offset'].iloc[0]
+
+    current_max = max(Binocular_Standard, Binocular_Crowded, Monocular_Standard, Monocular_Crowded)
+    global_max = max(global_max, current_max)
+
+    b_label = 'Binocular' if i == 0 else ""
+    m_label = 'Monocular' if i == 0 else ""
+
+    plt.scatter(Binocular_Standard, Binocular_Crowded, color='lightblue', s=150, label=b_label)
+    plt.scatter(Monocular_Standard, Monocular_Crowded, color='pink', s=150, label=m_label)
+
+axis_limit = global_max * 1.2 if global_max > 0 else 0.1
+
+plt.xlim(0, axis_limit)
+plt.ylim(0, axis_limit)
+
+plt.xlabel('Average of last 20 trials (Standard)', fontsize=12)
+plt.ylabel('Average of last 20 trials (Crowded)', fontsize=12)
+plt.title('Vernier Thresholds: Crowded vs Standard', fontsize=14, fontweight='bold')
+
+plt.grid(True, linestyle=':', alpha=0.7)
+plt.legend(loc='upper left')
+
+plt.show()
+__________________________________________________________________________________________________________________________________________________________________________________________________
+
 #instruction paper 
