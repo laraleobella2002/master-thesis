@@ -17,7 +17,7 @@ tk.openDataFile('trial.edf')
     
 step_size = 0.01 ##
 max_value = 0.25
-num_trials = 150 ##
+num_trials = 170 ##
 lineHight = 1.5
 lineThickness = 2
 stim_time = 0.15 ##
@@ -85,8 +85,8 @@ for condition in block_conditions:
     current_crowdCount = condition['crowdCount']
     current_eccentricity = condition['eccentricity']
     block_label = condition['label']
-    start_value_right = 0.1
-    start_value_left = -0.1
+    start_value_right = 0.15
+    start_value_left = -0.15
     
     msg = f"Starting {block_label}\n Press L to continue."
     block_msg = visual.TextStim(win, text=msg, color='black')
