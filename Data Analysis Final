@@ -1,6 +1,7 @@
 from google.colab import files
 uploaded = files.upload()
 https://colab.research.google.com/drive/1OyCpi3ydPJzomiuEcOGWJMrBVCp7ZQTP
+https://colab.research.google.com/drive/1pTSVTI0CydvlGZlg9KBloUaOGWjIt3-r#scrollTo=NA9e3gEZFhZK
 _________________________________________________________________________________________________________________________________________________________
 #Equation plotting 
 
