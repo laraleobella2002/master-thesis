@@ -25,9 +25,9 @@ spacing = 0.3
 #ecinericty 
 block_conditions = [
     {'label':'Block 1: Binocular_Standard', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
-    {'label':'Block 2: Binocular_Crowded', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': -5},
+    {'label':'Block 2: Binocular_Crowded', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': 5},
     {'label':'Block 3: Monocular_Standard', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 5},
-    {'label':'Block 4: Monocular_Crowded', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': -5},
+    {'label':'Block 4: Monocular_Crowded', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': 5},
 ]
 
 expInfo = {'participantID': '', 'session': ''}
