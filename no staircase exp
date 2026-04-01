@@ -164,6 +164,7 @@ for condition in block_conditions:
             vernier2.draw()
             cross1.draw()
             cross2.draw()
+            win.flip()
             
             tk.startRecording(1, 1, 1, 1)
             pylink.msecDelay(100) 
