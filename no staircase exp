@@ -79,14 +79,10 @@ tk.doTrackerSetup()
 win.units = 'deg'
 
 for condition in block_conditions:
-    streak_left = 0
-    streak_right = 0
     current_spacing = condition['spacing']
     current_crowdCount = condition['crowdCount']
     current_eccentricity = condition['eccentricity']
     block_label = condition['label']
-    start_value_right = 0.15
-    start_value_left = -0.15
     
     msg = f"Starting {block_label}\n Press L to continue."
     block_msg = visual.TextStim(win, text=msg, color='black')
@@ -102,30 +98,22 @@ for condition in block_conditions:
     if 'escape' in block_keys:
         win.close()
         core.quit()
-
         
-    trial_list = ['left'] * int(num_trials / 2) + ['right'] * int(num_trials / 2)
-    random.shuffle(trial_list)
-    
-    for trials in range(num_trials):
-        staircase = trial_list[trials]
-
-        if staircase == 'left':
-            offset = start_value_left
+    random.shuffle(offset_list)
+    for trials, offset_value in enumerate(offset_list):
+        if offset_value < 0:
             direction = 'left'
         else:
-            offset = start_value_right
             direction = 'right'
 
         trial_successful = False  
-            
         while not trial_successful:
             vernier1 = visual.Line(
                 win=win,
                 lineColor='black',
                 lineWidth=lineThickness,
-                start=(current_eccentricity + (offset), lineHight),
-                end=(current_eccentricity + (offset), 0)
+                start=(current_eccentricity + (offset_value), lineHight),
+                end=(current_eccentricity + (offset_value), 0)
             )
     
             vernier2 = visual.Line(
@@ -157,7 +145,7 @@ for condition in block_conditions:
                 if i == 0:
                     continue
                 x_pos = current_eccentricity + (i * current_spacing)
-                if x_pos == offset:  
+                if round(x_pos, 3) == round(offset_value, 3):  
                     continue
                     
                 flanker = visual.Line(
@@ -226,7 +214,6 @@ for condition in block_conditions:
                     
                 continue 
              
-
             rt_clock.reset()
             event.clearEvents() 
             response_time = rt_clock.getTime()
@@ -254,33 +241,13 @@ for condition in block_conditions:
                 statement = 'correct'
                 response_numeric = 1
                 feedback_color = 'green'
-                if staircase == 'left':
-                    streak_left += 1
-                    if streak_left == 2:
-                        start_value_left += step_size
-                        streak_left = 0
-                else:
-                    streak_right += 1
-                    if streak_right == 2:
-                        start_value_right -= step_size
-                        streak_right = 0
+                   
             else:
                 statement = 'false'
                 feedback_color = 'red'
                 response_numeric = 0
-                if staircase == 'left':
-                    start_value_left -= step_size
-                    streak_left = 0
-                    if start_value_left < -max_value:
-                        start_value_left = -max_value
-                else:
-                    start_value_right += step_size
-                    streak_right = 0
-                    if start_value_right > max_value:
-                        start_value_right = max_value
                         
-            writer.writerow([block_label, trials, offset, key_pressed, direction, response_time, statement, response_numeric])
-            
+            writer.writerow([block_label, trials, offset_value, key_pressed, direction, response_time, statement, response_numeric])
             cross1.lineColor = feedback_color
             cross2.lineColor = feedback_color
             cross1.draw()
@@ -304,7 +271,6 @@ while not last_keys:
 end_time01 = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 writer_para.writerow([participant_name, session_num, step_size, max_value, num_trials, lineHight, lineThickness,stim_time, spacing, start_time01, end_time01])
 data_file2.close()
-win.close()
 data_file.close()
 win.close()
 tk.closeDataFile()
