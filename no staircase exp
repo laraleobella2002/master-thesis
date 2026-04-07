@@ -6,7 +6,8 @@ import pylink
 from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy 
 from datetime import datetime
 
-SCREEN_WIDTH = 1920 #need to check for the new screen 
+#pixels
+SCREEN_WIDTH = 1920 
 SCREEN_HEIGHT = 1080
 screen_center_x = SCREEN_WIDTH / 2
 screen_center_y = SCREEN_HEIGHT / 2
@@ -50,8 +51,8 @@ writer_para.writerow(['participant_name', 'session_num', 'step_size', 'max_value
 
 
 mon = monitors.Monitor('tempMonitor')
-mon.setWidth(53)
-mon.setDistance(57.9)
+mon.setWidth(58.5)
+mon.setDistance(54.5)
 mon.setSizePix([1920, 1080])
 
 win = visual.Window(fullscr=True, color='white', units='deg', monitor=mon)
