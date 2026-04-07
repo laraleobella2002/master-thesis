@@ -1,0 +1,2 @@
+participant_name,session_num,step_size,max_value,num_trials,lineHight,lineThickness,stim_time,spacing,start_time,end_time
+p12,01,0.01,0.25,170,1.5,2,0.1,0.3,2026-04-07 14:27:48,2026-04-07 14:41:09
