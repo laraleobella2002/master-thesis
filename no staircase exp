@@ -53,7 +53,7 @@ writer_para.writerow(['participant_name', 'session_num', 'step_size', 'max_value
 mon = monitors.Monitor('tempMonitor')
 mon.setWidth(58.5)
 mon.setDistance(54.5)
-mon.setSizePix([1920, 1080])
+mon.setSizePix([SCREEN_WIDTH, SCREEN_HEIGHT])
 
 win = visual.Window(fullscr=True, color='white', units='deg', monitor=mon)
 win.mouseVisible = False
@@ -76,6 +76,7 @@ if 'escape' in first_keys:
 win.units = 'pix'
 genv = EyeLinkCoreGraphicsPsychoPy(tk, win)
 pylink.openGraphicsEx(genv)
+tk.sendCommand(f"screen_pixel_coords = 0 0 {SCREEN_WIDTH-1} {SCREEN_HEIGHT-1}")
 tk.doTrackerSetup()
 win.units = 'deg'
 
