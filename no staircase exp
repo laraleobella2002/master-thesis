@@ -7,8 +7,8 @@ from EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy
 from datetime import datetime
 
 #pixels
-SCREEN_WIDTH = 1920 
-SCREEN_HEIGHT = 1080
+SCREEN_WIDTH = 2560
+SCREEN_HEIGHT = 1440
 screen_center_x = SCREEN_WIDTH / 2
 screen_center_y = SCREEN_HEIGHT / 2
 fixation_window_radius = 100  # Define how far the eye can wander before it counts as looking away
