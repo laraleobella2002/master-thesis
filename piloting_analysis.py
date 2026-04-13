@@ -200,108 +200,162 @@ import os
 from scipy.optimize import curve_fit
 from scipy.stats import norm
 
-# Make sure your psychometric function is defined if running this block separately
 def psychometric_accuracy(x, alpha, beta):
     return (norm.cdf(x, 0, alpha) - 0.5) * (1 - beta) + 0.5
 
-# Re-filter file list to exclude parameters
+def fit_alpha_for_block(block_df):
+    summary = block_df.groupby('abs_offset')['is_correct'].agg(
+        prob_correct='mean',
+        trial_count='count'
+    ).reset_index()
+
+    x = summary['abs_offset'].to_numpy()
+    y = summary['prob_correct'].to_numpy()
+    sizes = summary['trial_count'].to_numpy()
+
+    if len(x) < 2 or len(np.unique(y)) < 2:
+        return np.nan
+
+    try:
+        w = 1 / sizes
+        w[~np.isfinite(w)] = 0
+        popt, _ = curve_fit(
+            psychometric_accuracy,
+            x,
+            y,
+            sigma=w,
+            p0=[0.1, 0.1],
+            maxfev=10000
+        )
+        alpha, _ = popt
+        return alpha
+    except (RuntimeError, ValueError):
+        return np.nan
+
+def get_condition_name(block_label):
+    label = str(block_label)
+    if 'Binocular_Standard' in label:
+        return 'binocular_standard'
+    if 'Binocular_Crowded' in label:
+        return 'binocular_crowded'
+    if 'Monocular_Standard' in label:
+        return 'monocular_standard'
+    if 'Monocular_Crowded' in label:
+        return 'monocular_crowded'
+    return None
+
 file_list = glob.glob('data_p*_session_*.csv')
 file_list = [f for f in file_list if '(' not in f and '_parameters.csv' not in f]
 
-all_jnd_results = []       # Stores block-level alphas
-participant_ratios = []    # Stores participant-level ratios calculated from alphas
-
+# 1) Fit psychometric alpha/JND for each participant-file and condition
+all_thresholds = []
 for file in file_list:
     filename = os.path.basename(file)
     participant_id = filename.split('_')[1]
-    indv_df = pd.read_csv(file)
 
+    indv_df = pd.read_csv(file)
     indv_df['is_correct'] = indv_df['response_numeric']
     indv_df['abs_offset'] = indv_df['offset'].abs()
 
-    # Dictionary to hold the alphas for the current participant
-    current_alphas = {}
+    for block_label, block_df in indv_df.groupby('label'):
+        condition = get_condition_name(block_label)
+        if condition is None:
+            continue
 
-    # 1. Loop through blocks and calculate Alpha (JND) first
-    for block_label in indv_df['label'].unique():
-        block_data = indv_df[indv_df['label'] == block_label]
-
-        summary = block_data.groupby('abs_offset')['is_correct'].agg(
-            prob_correct='mean',
-            trial_count='count'
-        ).reset_index()
-
-        x = summary['abs_offset'].values
-        y = summary['prob_correct'].values
-        sizes = summary['trial_count'].values
-
-        alpha, beta = np.nan, np.nan
-
-        # Check if we have enough data to fit the curve
-        if len(x) >= 2 and len(np.unique(y)) >= 2:
-            p0 = [0.1, 0.1]
-            try:
-                w = 1 / sizes
-                w[~np.isfinite(w)] = 0
-                popt, pcov = curve_fit(psychometric_accuracy, x, y, sigma=w, p0=p0, maxfev=10000)
-                alpha, beta = popt
-            except (RuntimeError, ValueError):
-                pass # Leaves alpha as np.nan
-
-        # Store the alpha in our temporary dictionary and the master list
-        current_alphas[block_label] = alpha
-
-        all_jnd_results.append({
-            'participant_file': filename,
+        alpha = fit_alpha_for_block(block_df)
+        all_thresholds.append({
             'participant_id': participant_id,
-            'block_label': block_label,
-            'jnd_alpha': alpha,
+            'participant_file': filename,
+            'condition': condition,
+            'threshold_alpha': alpha
         })
 
-    # 2. Calculate Ratios from the computed Alphas
-    # Extract the specific alphas needed for this participant.
-    # Using 'in' just in case the label strings have trailing numbers (e.g., 'Binocular_Standard_1')
-    alpha_bin_std = next((v for k, v in current_alphas.items() if 'Binocular_Standard' in k), np.nan)
-    alpha_bin_crw = next((v for k, v in current_alphas.items() if 'Binocular_Crowded' in k), np.nan)
-    alpha_mon_std = next((v for k, v in current_alphas.items() if 'Monocular_Standard' in k), np.nan)
-    alpha_mon_crw = next((v for k, v in current_alphas.items() if 'Monocular_Crowded' in k), np.nan)
+thresholds_df = pd.DataFrame(all_thresholds)
 
-    # Binocular Ratio (Crowded / Standard)
-    ratio_bin = np.nan
-    if pd.notna(alpha_bin_std) and pd.notna(alpha_bin_crw) and alpha_bin_std != 0:
-        logratio_bin = np.log(alpha_bin_crw / alpha_bin_std)
+# 2) Average thresholds across files/sessions for each participant and condition
+avg_thresholds = (
+    thresholds_df
+    .groupby(['participant_id', 'condition'], as_index=False)['threshold_alpha']
+    .mean()
+)
 
-    # Monocular Ratio (Crowded / Standard)
-    ratio_mon = np.nan
-    if pd.notna(alpha_mon_std) and pd.notna(alpha_mon_crw) and alpha_mon_std != 0:
-        logratio_mon =np.log(alpha_mon_crw / alpha_mon_std)
+pivot_thresholds = avg_thresholds.pivot(
+    index='participant_id',
+    columns='condition',
+    values='threshold_alpha'
+).reset_index()
 
-    # Store final ratios for this participant
-    participant_ratios.append({
-        'participant_id': participant_id,
-        'alpha_binocular_standard': alpha_bin_std,
-        'alpha_binocular_crowded': alpha_bin_crw,
-        'logratio_binocular': logratio_bin,
-        'alpha_monocular_standard': alpha_mon_std,
-        'alpha_monocular_crowded': alpha_mon_crw,
-        'logratio_monocular': logratio_mon
-    })
+for col in [
+    'binocular_standard',
+    'binocular_crowded',
+    'monocular_standard',
+    'monocular_crowded'
+]:
+    if col not in pivot_thresholds.columns:
+        pivot_thresholds[col] = np.nan
 
-# --- Final Aggregations ---
+# 3) Requested ratios and log-ratios
+def safe_ratio(numerator, denominator):
+    denominator = denominator.replace(0, np.nan)
+    return numerator / denominator
 
-# 1. Block-level JNDs (averaged in case a participant did the same session twice)
-final_jnd_df = pd.DataFrame(all_jnd_results)
-final_jnd_avg_per_participant = final_jnd_df.groupby(['participant_id', 'block_label']).mean(numeric_only=True).reset_index()
+def safe_log(series):
+    return np.where(series > 0, np.log(series), np.nan)
 
-# 2. Participant-level Ratios (averaged in case of multiple files per participant)
-final_ratios_df = pd.DataFrame(participant_ratios)
-final_ratios_avg_per_participant = final_ratios_df.groupby('participant_id').mean(numeric_only=True).reset_index()
+# Within-modality: standard / crowded
+pivot_thresholds['ratio_binocular_standard_over_crowded'] = safe_ratio(
+    pivot_thresholds['binocular_standard'],
+    pivot_thresholds['binocular_crowded']
+)
+pivot_thresholds['ratio_monocular_standard_over_crowded'] = safe_ratio(
+    pivot_thresholds['monocular_standard'],
+    pivot_thresholds['monocular_crowded']
+)
 
-print("\n--- JND (alpha) results per participant and block ---")
-print(final_jnd_avg_per_participant.to_string())
+# Between-modality (what you described): monocular / binocular
+pivot_thresholds['ratio_uncrowded_monocular_over_binocular'] = safe_ratio(
+    pivot_thresholds['monocular_standard'],
+    pivot_thresholds['binocular_standard']
+)
+pivot_thresholds['ratio_crowded_monocular_over_binocular'] = safe_ratio(
+    pivot_thresholds['monocular_crowded'],
+    pivot_thresholds['binocular_crowded']
+)
 
-print("\n--- Binocular and Monocular Ratios (calculated from Alphas) ---")
-print(final_ratios_avg_per_participant.to_string())
+pivot_thresholds['log_ratio_uncrowded_monocular_over_binocular'] = safe_log(
+    pivot_thresholds['ratio_uncrowded_monocular_over_binocular']
+)
+pivot_thresholds['log_ratio_crowded_monocular_over_binocular'] = safe_log(
+    pivot_thresholds['ratio_crowded_monocular_over_binocular']
+)
+
+print("\n--- Averaged Psychometric Thresholds (alpha/JND) per Participant ---")
+print(
+    pivot_thresholds[
+        [
+            'participant_id',
+            'binocular_standard',
+            'binocular_crowded',
+            'monocular_standard',
+            'monocular_crowded'
+        ]
+    ].to_string(index=False)
+)
+
+print("\n--- Requested Ratios per Participant ---")
+print(
+    pivot_thresholds[
+        [
+            'participant_id',
+            'ratio_binocular_standard_over_crowded',
+            'ratio_monocular_standard_over_crowded',
+            'ratio_uncrowded_monocular_over_binocular',
+            'ratio_crowded_monocular_over_binocular',
+            'log_ratio_uncrowded_monocular_over_binocular',
+            'log_ratio_crowded_monocular_over_binocular'
+        ]
+    ].to_string(index=False)
+)
 df = pd.merge(final_results_df_monocular, final_results_df_binocular, on='participant_id', suffixes=('_m', '_b'))
 lim = 2
 fig, ax = plt.subplots(figsize=(7, 6))
