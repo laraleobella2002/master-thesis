@@ -1,0 +1,88 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.optimize import curve_fit
+import glob
+from scipy.stats import norm
+
+sns.set_theme(style="whitegrid", context="paper", font_scale=1.2)
+
+file_pattern = "data_p*_session_*.csv"
+file_list = glob.glob(file_pattern)
+
+df_list = []
+for file in file_list:
+    temp_df = pd.read_csv(file)
+    df_list.append(temp_df)
+
+df = pd.concat(df_list, ignore_index=True)
+
+df['is_correct'] = df['response_numeric']
+df['abs_offset'] = df['offset'].abs()
+
+def psychometric_accuracy(x, alpha, beta):
+    #yhat=0.5 + (0.5-gamma) / (1 + np.exp(-beta * (x - alpha)))
+    yhat=(norm.cdf(x,0,alpha)-0.5)*(1-beta)+0.5
+    return yhat
+
+blocks = df['label'].unique()
+
+fig, axes = plt.subplots(2, 2, figsize=(14, 10), sharey=True)
+axes_flat = axes.flatten()
+colors = sns.color_palette("deep", len(blocks))
+
+for i, (ax, block, color) in enumerate(zip(axes_flat, blocks, colors)):
+    block_data = df[df['label'] == block]
+
+    summary = block_data.groupby('abs_offset')['is_correct'].agg(
+        prob_correct='mean',
+        trial_count='count'
+    ).reset_index()
+
+    x = summary['abs_offset'].values
+    y = summary['prob_correct'].values
+    sizes = summary['trial_count'].values
+
+
+    #CURVE FIT
+    p0 = [0.1,0.1]
+    try:
+        #x=np.array((0,)+tuple(x))
+        #y=np.array((0.5,)+tuple(y))
+        #sizes=np.array((100000,)+tuple(sizes))
+        w=1/sizes
+        #print(y.shape)
+        #w=np.ones(len(x))/1
+        #w[0]=0.01
+
+        popt, _ = curve_fit(psychometric_accuracy, x, y, sigma=w, p0=p0, maxfev=10000)
+        alpha, beta = popt
+    except RuntimeError:
+        alpha, beta = np.mean(x), 1
+
+    jnd_75 = alpha
+
+    sns.scatterplot(
+        x=x, y=y,size=sizes,
+        color=color, alpha=0.8, ax=ax, edgecolor="black", legend=False
+    )
+
+    x_smooth = np.linspace(0, x.max() * 1.1, 300)
+    y_smooth = psychometric_accuracy(x_smooth, alpha, beta)
+
+    ax.plot(x_smooth, y_smooth, color=color, linewidth=3,
+            label=f"75% JND = {jnd_75:.3f}\nSlope (β) = {beta:.1f}")
+
+    ax.axhline(0.75, color='gray', linestyle='--', alpha=0.6)
+    ax.axvline(jnd_75, color='gray', linestyle='--', alpha=0.6)
+
+    ax.set_title(block, fontsize=14, fontweight='bold', pad=10)
+    ax.set_xlabel("Absolute Offset", fontsize=12)
+    ax.set_ylabel("Accuracy", fontsize=12)
+    ax.legend(loc="lower right", frameon=True, shadow=True)
+    ax.set_ylim(0.45, 1.05)
+
+sns.despine()
+plt.tight_layout()
+plt.show()
