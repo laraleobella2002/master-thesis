@@ -1,88 +1,107 @@
+import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from scipy.optimize import curve_fit
 import glob
+import os
+from scipy.optimize import curve_fit
 from scipy.stats import norm
 
-sns.set_theme(style="whitegrid", context="paper", font_scale=1.2)
-
-file_pattern = "data_p*_session_*.csv"
-file_list = glob.glob(file_pattern)
-
-df_list = []
-for file in file_list:
-    temp_df = pd.read_csv(file)
-    df_list.append(temp_df)
-
-df = pd.concat(df_list, ignore_index=True)
-
-df['is_correct'] = df['response_numeric']
-df['abs_offset'] = df['offset'].abs()
-
 def psychometric_accuracy(x, alpha, beta):
-    #yhat=0.5 + (0.5-gamma) / (1 + np.exp(-beta * (x - alpha)))
-    yhat=(norm.cdf(x,0,alpha)-0.5)*(1-beta)+0.5
+    yhat = (norm.cdf(x, 0, alpha) - 0.5) * (1 - beta) + 0.5
     return yhat
 
-blocks = df['label'].unique()
+file_list = glob.glob('data_p*_session_*.csv')
+file_list = [f for f in file_list if '(' not in f and '_parameters.csv' not in f]
 
-fig, axes = plt.subplots(2, 2, figsize=(14, 10), sharey=True)
-axes_flat = axes.flatten()
-colors = sns.color_palette("deep", len(blocks))
+all_results = []
 
-for i, (ax, block, color) in enumerate(zip(axes_flat, blocks, colors)):
-    block_data = df[df['label'] == block]
+for file in file_list:
+    filename = os.path.basename(file)
+    participant_id = filename.split('_')[1]
+    indv_df = pd.read_csv(file)
 
-    summary = block_data.groupby('abs_offset')['is_correct'].agg(
-        prob_correct='mean',
-        trial_count='count'
-    ).reset_index()
+    indv_df['is_correct'] = indv_df['response_numeric']
+    indv_df['abs_offset'] = indv_df['offset'].abs()
 
-    x = summary['abs_offset'].values
-    y = summary['prob_correct'].values
-    sizes = summary['trial_count'].values
+    # Temporary dictionary to store JNDs (alpha) for this specific file
+    jnds_for_file = {}
 
+    # Loop through each unique block to get the JNDs
+    for block_label in indv_df['label'].unique():
+        block_data = indv_df[indv_df['label'] == block_label]
 
-    #CURVE FIT
-    p0 = [0.1,0.1]
-    try:
-        #x=np.array((0,)+tuple(x))
-        #y=np.array((0.5,)+tuple(y))
-        #sizes=np.array((100000,)+tuple(sizes))
-        w=1/sizes
-        #print(y.shape)
-        #w=np.ones(len(x))/1
-        #w[0]=0.01
+        summary = block_data.groupby('abs_offset')['is_correct'].agg(
+            prob_correct='mean',
+            trial_count='count'
+        ).reset_index()
 
-        popt, _ = curve_fit(psychometric_accuracy, x, y, sigma=w, p0=p0, maxfev=10000)
-        alpha, beta = popt
-    except RuntimeError:
-        alpha, beta = np.mean(x), 1
+        x = summary['abs_offset'].values
+        y = summary['prob_correct'].values
+        sizes = summary['trial_count'].values
 
-    jnd_75 = alpha
+        alpha, beta = np.nan, np.nan
 
-    sns.scatterplot(
-        x=x, y=y,size=sizes,
-        color=color, alpha=0.8, ax=ax, edgecolor="black", legend=False
-    )
+        # Only proceed if there's enough data for curve_fit
+        if len(x) >= 2 and len(np.unique(y)) >= 2:
+            p0 = [0.1, 0.1]
+            try:
+                w = 1 / sizes
+                w[~np.isfinite(w)] = 0 # Set weights for 0-trial points to 0
 
-    x_smooth = np.linspace(0, x.max() * 1.1, 300)
-    y_smooth = psychometric_accuracy(x_smooth, alpha, beta)
+                popt, _ = curve_fit(psychometric_accuracy, x, y, sigma=w, p0=p0, maxfev=10000)
+                alpha, beta = popt
+            except (RuntimeError, ValueError):
+                pass # If it fails, alpha remains NaN
 
-    ax.plot(x_smooth, y_smooth, color=color, linewidth=3,
-            label=f"75% JND = {jnd_75:.3f}\nSlope (β) = {beta:.1f}")
+        # Save the calculated alpha (JND) to our dictionary under the block label
+        jnds_for_file[block_label] = alpha
 
-    ax.axhline(0.75, color='gray', linestyle='--', alpha=0.6)
-    ax.axvline(jnd_75, color='gray', linestyle='--', alpha=0.6)
+    # Safely extract the JNDs by checking if the label contains our target strings
+    b_standard = next((v for k, v in jnds_for_file.items() if 'Binocular_Standard' in str(k)), np.nan)
+    b_crowded = next((v for k, v in jnds_for_file.items() if 'Binocular_Crowded' in str(k)), np.nan)
+    m_standard = next((v for k, v in jnds_for_file.items() if 'Monocular_Standard' in str(k)), np.nan)
+    m_crowded = next((v for k, v in jnds_for_file.items() if 'Monocular_Crowded' in str(k)), np.nan)
 
-    ax.set_title(block, fontsize=14, fontweight='bold', pad=10)
-    ax.set_xlabel("Absolute Offset", fontsize=12)
-    ax.set_ylabel("Accuracy", fontsize=12)
-    ax.legend(loc="lower right", frameon=True, shadow=True)
-    ax.set_ylim(0.45, 1.05)
+    # Calculate Ratios (Crowded / Standard). Ensure we don't divide by zero or NaN.
+    ratio_binocular = np.nan
+    if pd.notna(b_standard) and b_standard != 0 and pd.notna(b_crowded):
+        ratio_binocular = np.log(b_crowded / b_standard)
 
-sns.despine()
+    ratio_monocular = np.nan
+    if pd.notna(m_standard) and m_standard != 0 and pd.notna(m_crowded):
+        ratio_monocular = np.log(m_crowded / m_standard)
+
+    # Append to our master list
+    all_results.append({
+        'participant_file': filename,
+        'participant_id': participant_id,
+        'JND_Binocular_Standard': b_standard,
+        'JND_Binocular_Crowded': b_crowded,
+        'logRatio_Binocular': ratio_binocular,
+        'JND_Monocular_Standard': m_standard,
+        'JND_Monocular_Crowded': m_crowded,
+        'logRatio_Monocular': ratio_monocular
+    })
+
+# Convert to DataFrame
+final_df = pd.DataFrame(all_results)
+
+# Average the results per participant (in case there are multiple sessions/files per participant)
+final_avg_per_participant = final_df.groupby('participant_id').mean(numeric_only=True).reset_index()
+
+print("\n--- Final Ratios and JNDs per Participant ---")
+print(final_avg_per_participant.to_string())
+
+# PLOTTING (Moved outside the loop)
+lim = 4
+fig, ax = plt.subplots(figsize=(7, 6))
+
+# Use the final_avg_per_participant DataFrame and correct column names
+ax.scatter((final_avg_per_participant['logRatio_Monocular']), (final_avg_per_participant['logRatio_Binocular']), s=150, c='lightblue')
+
+ax.plot([-lim, lim], [-lim, lim], color='gray', linestyle='--', label='y = x', zorder=1)
+ax.set(xlim=(-lim, lim), ylim=(-lim, lim), xlabel='Log(Monocular Ratio)', ylabel='Log(Binocular Ratio)', title='Threshold Ratios: Binocular vs Monocular')
+ax.grid(True, linestyle=':', alpha=0.7)
+ax.legend(loc='upper left')
 plt.tight_layout()
 plt.show()
