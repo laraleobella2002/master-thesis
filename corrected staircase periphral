@@ -83,6 +83,7 @@ win.units = 'deg'
 
 for condition in block_conditions:
     streak = 0
+    start_value= 0.15
     current_spacing = condition['spacing']
     current_crowdCount = condition['crowdCount']
     current_eccentricity = condition['eccentricity']
