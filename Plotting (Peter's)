@@ -1,0 +1,170 @@
+#plotting ratios 
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import glob
+import os
+from scipy.optimize import curve_fit
+from scipy.stats import norm,pearsonr,wilcoxon
+
+def psychometric_accuracy(x, alpha, beta):
+    yhat = (norm.cdf(x, 0, alpha) - 0.5) * (1 - beta) + 0.5
+    return yhat
+
+file_list = glob.glob('data_p*_session_*.csv')
+file_list = [f for f in file_list if '(' not in f and '_parameters.csv' not in f]
+
+all_results = []
+
+for file in file_list:
+    filename = os.path.basename(file)
+    participant_id = filename.split('_')[1]
+    indv_df = pd.read_csv(file)
+
+    indv_df['is_correct'] = indv_df['response_numeric']
+    indv_df['abs_offset'] = indv_df['offset'].abs()
+
+    jnds_for_file = {}
+
+    for block_label in indv_df['label'].unique():
+        block_data = indv_df[indv_df['label'] == block_label]
+
+        summary = block_data.groupby('abs_offset')['is_correct'].agg(
+            prob_correct='mean',
+            trial_count='count'
+        ).reset_index()
+
+        x = summary['abs_offset'].values
+        y = summary['prob_correct'].values
+        sizes = summary['trial_count'].values
+
+        alpha, beta = np.nan, np.nan
+
+        # Only proceed if there's enough data for curve_fit
+        if len(x) >= 2 and len(np.unique(y)) >= 2:
+            p0 = [0.1, 0.1]
+            try:
+                w = 1 / sizes
+                w[~np.isfinite(w)] = 0 # Set weights for 0-trial points to 0
+
+                popt, _ = curve_fit(psychometric_accuracy, x, y, sigma=w, p0=p0, maxfev=10000)
+                alpha, beta = popt
+            except (RuntimeError, ValueError):
+                pass # If it fails, alpha remains NaN
+
+        jnds_for_file[block_label] = alpha
+
+    # Safely extract the JNDs by checking if the label contains our target strings
+    b_standard = next((v for k, v in jnds_for_file.items() if 'Binocular_Standard' in str(k)), np.nan)
+    b_crowded = next((v for k, v in jnds_for_file.items() if 'Binocular_Crowded' in str(k)), np.nan)
+    m_standard = next((v for k, v in jnds_for_file.items() if 'Monocular_Standard' in str(k)), np.nan)
+    m_crowded = next((v for k, v in jnds_for_file.items() if 'Monocular_Crowded' in str(k)), np.nan)
+
+    ratio_binocular = np.nan
+    if pd.notna(b_standard) and b_standard != 0 and pd.notna(b_crowded):
+        ratio_binocular = np.log(b_crowded / b_standard)
+
+    ratio_monocular = np.nan
+    if pd.notna(m_standard) and m_standard != 0 and pd.notna(m_crowded):
+        ratio_monocular = np.log(m_crowded / m_standard)
+    
+    ratio_standard = np.nan
+    if pd.notna(b_standard) and b_standard != 0 and pd.notna(m_standard):
+        ratio_standard = np.log(m_standard / b_standard)
+        
+    ratio_crowded = np.nan
+    if pd.notna(b_crowded) and b_crowded != 0 and pd.notna(m_crowded):
+        ratio_crowded = np.log(m_crowded / b_crowded)
+    
+    # Append to our master list
+    all_results.append({
+        'participant_file': filename,
+        'participant_id': participant_id,
+        'JND_Binocular_Standard': b_standard,
+        'JND_Binocular_Crowded': b_crowded,
+        'logRatio_Binocular': ratio_binocular,
+        'JND_Monocular_Standard': m_standard,
+        'JND_Monocular_Crowded': m_crowded,
+        'logRatio_Monocular': ratio_monocular,
+        'logRatio_Standard': ratio_standard,
+        'logRatio_Crowded': ratio_crowded
+    })
+
+final_df = pd.DataFrame(all_results)
+
+final_avg_per_participant = final_df.groupby('participant_id').mean(numeric_only=True).reset_index()
+
+
+c2s_ratio=((final_avg_per_participant['logRatio_Monocular'],final_avg_per_participant['logRatio_Binocular']))
+m2b_ratio=((final_avg_per_participant['logRatio_Standard'],final_avg_per_participant['logRatio_Crowded']))
+
+c2s_ratio=np.array(c2s_ratio)
+m2b_ratio=np.array(m2b_ratio)
+
+m=np.max((np.max(np.abs(c2s_ratio.flatten())),np.max(np.abs(m2b_ratio.flatten()))))
+extlims=(-m*1.1,m*1.1)
+
+both=(c2s_ratio,m2b_ratio)
+nobins=20
+ylims=(0,0.3)
+
+plt.figure(0,(10,10))
+
+for hist_p in range(2):
+    plt.subplot(3,2,1+hist_p)
+    y=both[hist_p].flatten()
+    xd=np.linspace(extlims[0],extlims[1],nobins)
+    d=np.histogram(y,xd)
+    xd=(d[1][1:]+d[1][0:-1])/2
+    d=d[0]
+    d=d/np.sum(d)
+    plt.bar(xd,d,width=xd[1]-xd[0],color='k')
+    plt.plot(np.zeros(2),ylims,'g--')
+    plt.gca().set_ylim(ylims)
+    if hist_p==0:
+        plt.xlabel('Crowding strength')
+        print('p-value for Crowding strength diff than 0: '+str(wilcoxon(y)[1]))
+    else:
+        plt.xlabel('Binocular benefit')
+        print('p-value for Binocular benefit diff than 0: '+str(wilcoxon(y)[1]))
+        
+    plt.gca().set_aspect(2)
+for i in range(2):
+    for j in range(2):
+        plt.subplot(3,2,3+i*2+j)
+        x=m2b_ratio[i,:]
+        y=c2s_ratio[j,:]
+        
+        plt.plot(extlims,np.zeros(2),'g--')
+        plt.plot(np.zeros(2),extlims,'g--')
+        plt.plot(x,y,'ok')
+        
+        coef = np.polyfit(x,y,1)
+        poly1d_fn = np.poly1d(coef) 
+        plt.plot(x,poly1d_fn(x),'-r')
+        
+        print('Panel at row '+str(i+1)+' column '+str(j+1)+': p-value for correlation '+str(pearsonr(x,y)[1]))
+        
+        if i==0:
+            plt.xlabel('Binocular benefit under Uncrowded')
+        else:
+            plt.xlabel('Binocular benefit under Crowded')
+        if j==0:
+            plt.ylabel('Crowding strength under Monocular')
+        else:
+            plt.ylabel('Crowding strength under Binocular')
+        plt.gca().set_aspect('equal')
+# print("\n--- Final Ratios and JNDs per Participant ---")
+# print(final_avg_per_participant.to_string())
+
+# lim = 4
+# fig, ax = plt.subplots(figsize=(7, 6))
+
+# ax.scatter((final_avg_per_participant['logRatio_Monocular']), (final_avg_per_participant['logRatio_Binocular']), s=150, c='lightblue')
+
+# ax.plot([-lim, lim], [-lim, lim], color='gray', linestyle='--', label='y = x', zorder=1)
+# ax.set(xlim=(-lim, lim), ylim=(-lim, lim), xlabel='Log(Monocular Ratio)', ylabel='Log(Binocular Ratio)', title='Threshold Ratios: Binocular vs Monocular')
+# ax.grid(True, linestyle=':', alpha=0.7)
+# ax.legend(loc='upper left')
+# plt.tight_layout()
+# plt.show()
