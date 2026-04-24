@@ -44,7 +44,7 @@ writer_para.writerow(['participant_name', 'session_num', 'step_size', 'max_value
 
 mon = monitors.Monitor('tempMonitor')
 mon.setWidth(58.5)
-mon.setDistance(54.5)
+mon.setDistance(188)
 mon.setSizePix([SCREEN_WIDTH, SCREEN_HEIGHT])
 
 win = visual.Window(fullscr=True, color='white', units='deg', monitor=mon)
