@@ -1,0 +1,36 @@
+Generating PsychoPy script...
+
+######################## Running: /Users/laura/fovea.py ########################
+2026-04-24 15:31:49.138 python[583:9255] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/6g/2ydm24f10pgcw563ch_0_ncw0000gy/T/org.opensciencetools.psychopy.savedState
+/Users/laura/Desktop/PsychoPy.app/Contents/Resources/lib/python3.10/requests/__init__.py:86: RequestsDependencyWarning: Unable to find acceptable character detection dependency (chardet or charset_normalizer).
+  warnings.warn(
+Traceback (most recent call last):
+  File "/Users/laura/fovea.py", line 1, in <module>
+    from psychopy import visual, event, core, monitors, gui
+  File "/Users/laura/Desktop/PsychoPy.app/Contents/Resources/lib/python3.10/psychopy/gui/__init__.py", line 41, in <module>
+    from .qtgui import *
+  File "/Users/laura/Desktop/PsychoPy.app/Contents/Resources/lib/python3.10/psychopy/gui/qtgui.py", line 19, in <module>
+    importlib.import_module(f"{libname}.QtCore")
+  File "importlib/__init__.pyc", line 126, in import_module
+ImportError: dlopen(/Users/laura/Desktop/PsychoPy.app/Contents/Resources/lib/python3.10/PyQt6/QtCore.abi3.so, 2): Library not loaded: @rpath/QtCore.framework/Versions/A/QtCore
+  Referenced from: /Users/laura/Desktop/PsychoPy.app/Contents/Resources/lib/python3.10/PyQt6/QtCore.abi3.so
+  Reason: no suitable image found.  Did find:
+    /Users/laura/Desktop/PsychoPy.app/Contents/Resources/lib/python3.10/PyQt6/Qt6/lib/QtCore.framework/Versions/A/QtCore: cannot load 'QtCore' (load command 0x80000034 is unknown)
+######### Experiment ended with exit code 1 [pid:583] ##########
+######################## Running: /Users/laura/fovea.py ########################
+2026-04-24 15:37:22.347 python[619:11932] ApplePersistenceIgnoreState: Existing state will not be touched. New state will be written to /var/folders/6g/2ydm24f10pgcw563ch_0_ncw0000gy/T/org.opensciencetools.psychopy.savedState
+/Users/laura/Desktop/PsychoPy.app/Contents/Resources/lib/python3.10/requests/__init__.py:86: RequestsDependencyWarning: Unable to find acceptable character detection dependency (chardet or charset_normalizer).
+  warnings.warn(
+Traceback (most recent call last):
+  File "/Users/laura/fovea.py", line 1, in <module>
+    from psychopy import visual, event, core, monitors, gui
+  File "/Users/laura/Desktop/PsychoPy.app/Contents/Resources/lib/python3.10/psychopy/gui/__init__.py", line 41, in <module>
+    from .qtgui import *
+  File "/Users/laura/Desktop/PsychoPy.app/Contents/Resources/lib/python3.10/psychopy/gui/qtgui.py", line 19, in <module>
+    importlib.import_module(f"{libname}.QtCore")
+  File "importlib/__init__.pyc", line 126, in import_module
+ImportError: dlopen(/Users/laura/Desktop/PsychoPy.app/Contents/Resources/lib/python3.10/PyQt6/QtCore.abi3.so, 2): Library not loaded: @rpath/QtCore.framework/Versions/A/QtCore
+  Referenced from: /Users/laura/Desktop/PsychoPy.app/Contents/Resources/lib/python3.10/PyQt6/QtCore.abi3.so
+  Reason: no suitable image found.  Did find:
+    /Users/laura/Desktop/PsychoPy.app/Contents/Resources/lib/python3.10/PyQt6/Qt6/lib/QtCore.framework/Versions/A/QtCore: cannot load 'QtCore' (load command 0x80000034 is unknown)
+######### Experiment ended with exit code 1 [pid:619] ##########
