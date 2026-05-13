@@ -1,3 +1,23 @@
 target_name = "class"
 # TODO: Create a variable 'target' containing only the column "class"
 # target = adult_census[target_name]
+#when we do slice we can put the filter on either columns or rows 
+
+
+# TODO remove the target from the data
+data=adult_census.drop(columns=[traget_name]) 
+data.head()
+
+
+from sklearn.neighbors import KNeighborsClassifier
+# First we create the model, then we fit it by giving it the data and target.
+model= KNeiboorsClassifier()
+model.fit(data,target)
+
+
+#TODO prediction
+# Here, we ask you to make predictions on the training data for demonstration purposes.
+# Note that this is NOT how you validate your model.
+target_predicted= model.predict(data)
+
+"we can split the same data set cut it into four parts data train, data tset 
