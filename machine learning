@@ -40,3 +40,22 @@ adult_census.head()
 
 
 data,target= adult_census.drop(columns="education-num")
+
+
+#TODO - use the fonction 'describe'
+data["age"].describe()
+
+from sklearn.model_selection import train_test_split
+data_train,data_test, target_train, target_test = train_test_split
+  data_numeric, target, random_state=42, test_size= 0.25
+#TODO
+
+
+
+from sklearn.linear_model import LogisticRegression
+
+model = LogisticRegression()
+model.fir(data_train,target_train)
+
+accuracy = model.score(data_test, target_test)
+print(f"Accuracy of logistic regression: {accuracy:.1%}")
