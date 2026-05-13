@@ -25,3 +25,18 @@ target_predicted= model.predict(data)
 # TODO: Create variables 'target_test' and 'data_test' from this new 'adult_census_test'
 tartget_test= adult_census_test[target_name]
 data_test= adult_census_test.drop(columns=[target_name])
+
+#TODO score
+accuarcy= model.score(data_test, target_test)
+print(f"The test accuracy using our model is {accuracy:.1%}")
+
+
+adult_census = pd.read_csv("Datasets/adult-census.csv")
+
+# drop the duplicated column `"education-num"` as we did in the first course
+# TODO
+adult_census = adult_census.drop(columns="eduaction_num")
+adult_census.head()
+
+
+data,target= adult_census.drop(columns="education-num")
