@@ -20,4 +20,8 @@ model.fit(data,target)
 # Note that this is NOT how you validate your model.
 target_predicted= model.predict(data)
 
-"we can split the same data set cut it into four parts data train, data tset 
+"we can split the same data set cut it into four parts data train, data test, tasret train tatest test
+
+# TODO: Create variables 'target_test' and 'data_test' from this new 'adult_census_test'
+tartget_test= adult_census_test[target_name]
+data_test= adult_census_test.drop(columns=[target_name])
