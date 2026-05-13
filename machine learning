@@ -1,3 +1,4 @@
+lecture 2
 target_name = "class"
 # TODO: Create a variable 'target' containing only the column "class"
 # target = adult_census[target_name]
@@ -59,3 +60,24 @@ model.fir(data_train,target_train)
 
 accuracy = model.score(data_test, target_test)
 print(f"Accuracy of logistic regression: {accuracy:.1%}")
+
+"lecture 2 section 2 a new notebook
+
+from sklearn.preprocessing import StandardScaler
+#TODO
+scaler = stranderedScaler()
+scaler.fit(data_train)
+
+#TODO Find Mean
+scaler.mean_
+
+#TODO data_train_scaled =
+scaler.scale_
+
+#TODO 
+data_train_scaled = scaler.trasnform(data_train)
+data_train-scale
+
+" trasnfom>> if we dont want to affect the data we can easily scale the data, i;e we can sacle all data near to the zero then we add the new data 
+
+
