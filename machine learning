@@ -1,0 +1,3 @@
+target_name = "class"
+# TODO: Create a variable 'target' containing only the column "class"
+# target = adult_census[target_name]
