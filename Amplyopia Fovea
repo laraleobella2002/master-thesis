@@ -9,20 +9,17 @@ SCREEN_HEIGHT = 1080
 
 step_size = 0.01 
 max_value = 0.25
-num_trials = 170 
+num_trials = 170
 lineHight = 1.5
 lineThickness = 2
 stim_time = 0.1 
 spacing = 0.3
 
-# eccentricity set to 0 for central presentation
 block_conditions = [
     {'label':'Block 1: Binocular_Standard', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 0},
     {'label':'Block 2: Binocular_Crowded', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': 0},
-    {'label':'Block 3: MonocularA_Standard', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 0},
-    {'label':'Block 4: MonocularA_Crowded', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': 0},
-    {'label':'Block 5: Monocular_Standard', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 0},
-    {'label':'Block 6: Monocular_Crowded', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': 0},
+    {'label':'Block 3: Monocular_Standard', 'spacing': 0, 'crowdCount': 0, 'eccentricity': 0},
+    {'label':'Block 4: Monocular_Crowded', 'spacing': spacing , 'crowdCount': 1, 'eccentricity': 0},
 ]
 
 expInfo = {'participantID': '', 'session': ''}
