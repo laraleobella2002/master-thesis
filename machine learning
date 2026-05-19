@@ -94,4 +94,6 @@ magic tricks << time << we just import it
 #train test split<<< 4 catagories or 4 groups 
 #in k fold n splits and test size were connected but in shuffle split they are not the same 
 
+
+
 #when we traet our data we shiuld be sure to have enough data to train and tset<< i.e if one coutry have one people as a population, sometimes it will be in training and other time it will be in test, nio sense 
