@@ -84,3 +84,12 @@ scaler =
 ...
 data_train_scaled.describe()
 
+
+#here we talk mostly about unsupervised models, when we go to unsupervised one we use another methods to predict and also we may use cluster technique using supervised methods 
+#iterations increasing?? 
+"multible dara swept 
+#kfold<<< marsille paris etc<< test each model then have the avaerge 
+
+magic tricks << time << we just import it 
+#train test split<<< 4 catagories or 4 groups 
+#in k fold n splits and test size were connected but in shuffle split they are not the same 
