@@ -97,3 +97,7 @@ magic tricks << time << we just import it
 
 
 #when we traet our data we shiuld be sure to have enough data to train and tset<< i.e if one coutry have one people as a population, sometimes it will be in training and other time it will be in test, nio sense 
+#the score is better when  we train numerical and catogerical data small standered variation 
+
+#with the transforter everything inside the pipline, we see no one and zeros 
+#gradiant bioosting<< is a small tree that gets smaller for wrong ones 
