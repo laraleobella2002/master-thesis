@@ -224,7 +224,7 @@ for i, (ax, block, color) in enumerate(zip(axes_flat, blocks, colors)):
 
 
     #CURVE FIT
-    p0 = [0.1,0.1]
+    p0 = [0.1,0]
     # Only attempt curve_fit if there is data
     if not summary.empty and len(np.unique(y)) >= 2:
         try:
