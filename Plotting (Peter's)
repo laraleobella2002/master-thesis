@@ -1,3 +1,299 @@
+from google.colab import files
+uploaded = files.upload()
+__________________________________________________________________________________________________________________________________________________________________________________________________________________
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import glob
+import os
+import warnings
+from scipy.optimize import curve_fit
+from scipy.stats import norm, pearsonr, wilcoxon, t
+
+# Suppress curve_fit warnings for cleaner output
+warnings.filterwarnings('ignore')
+
+def simpleLinearModel(p, x):
+    s, i = p
+    return s * x + i
+
+# Updated fitUpperLowerBounds: Removes Kapteyn, uses standard Scipy/Numpy math
+def fitUpperLowerBounds(x, y, xfine=[], alpha=0.95):
+    if len(xfine) == 0:
+        xfine = np.linspace(np.min(x), np.max(x), 1000)
+    
+    # 1. Fit a simple 1D polynomial (line)
+    p = np.polyfit(x, y, 1)
+    yhat = np.polyval(p, xfine)
+    
+    # 2. Calculate confidence intervals analytically
+    n = len(x)
+    m = 2  # parameters (slope, intercept)
+    dof = n - m
+    t_val = t.ppf((1 + alpha) / 2., dof)
+    
+    resid = y - np.polyval(p, x)
+    s_err = np.sqrt(np.sum(resid**2) / dof)
+    
+    x_mean = np.mean(x)
+    Sxx = np.sum((x - x_mean)**2)
+    
+    if Sxx == 0:
+        ci = 0
+    else:
+        ci = t_val * s_err * np.sqrt(1/n + (xfine - x_mean)**2 / Sxx)
+        
+    lower = yhat - ci
+    upper = yhat + ci
+
+    shaderx = np.concatenate((xfine, np.flipud(xfine)), 0)
+    shadery = np.concatenate((lower, np.flipud(upper)), 0)
+    
+    return xfine, (yhat, lower, upper), (shaderx, shadery)
+
+def psychometric_accuracy(x, alpha, beta):
+    yhat = (norm.cdf(x, 0, alpha) - 0.5) * (1 - beta) + 0.5
+    return yhat
+
+def isOutlier(x):
+    y = 0
+    if x < 0.05 or x > 0.4:
+        y = 1
+    return y
+
+def computeLogRatio(x, y):
+    return (np.log(x/y), complex(x, y))
+
+# --- MAIN DATA PROCESSING ---
+
+file_list = glob.glob('data_p*_session_*.csv')
+file_list = [f for f in file_list if '(' not in f and '_parameters.csv' not in f]
+
+all_results = []
+
+for file in file_list:
+    filename = os.path.basename(file)
+    try:
+        participant_id = filename.split('_')[1]
+    except:
+        participant_id = "unknown"
+        
+    indv_df = pd.read_csv(file)
+
+    indv_df['is_correct'] = indv_df['response_numeric']
+    indv_df['abs_offset'] = indv_df['offset'].abs()
+
+    jnds_for_file = {}
+
+    for block_label in indv_df['label'].unique():
+        block_data = indv_df[indv_df['label'] == block_label]
+
+        summary = block_data.groupby('abs_offset')['is_correct'].agg(
+            prob_correct='mean',
+            trial_count='count'
+        ).reset_index()
+
+        x = summary['abs_offset'].values
+        y = summary['prob_correct'].values
+        sizes = summary['trial_count'].values
+
+        alpha_val, beta_val = np.nan, np.nan
+
+        # Ensure enough data points for curve fitting
+        if len(x) >= 2 and len(np.unique(y)) >= 2:
+            p0 = [0.1, 0.1]
+            try:
+                w = 1 / sizes
+                w[~np.isfinite(w)] = 0
+                popt, _ = curve_fit(psychometric_accuracy, x, y, sigma=w, p0=p0, maxfev=10000)
+                alpha_val, beta_val = popt
+            except (RuntimeError, ValueError):
+                pass
+
+        jnds_for_file[block_label] = alpha_val
+
+    b_standard = next((v for k, v in jnds_for_file.items() if 'Binocular_Standard' in str(k)), np.nan)
+    b_crowded = next((v for k, v in jnds_for_file.items() if 'Binocular_Crowded' in str(k)), np.nan)
+    m_standard = next((v for k, v in jnds_for_file.items() if 'Monocular_Standard' in str(k)), np.nan)
+    m_crowded = next((v for k, v in jnds_for_file.items() if 'Monocular_Crowded' in str(k)), np.nan)
+
+    ratio_binocular = (np.nan, complex(np.nan, np.nan))
+    if pd.notna(b_standard) and b_standard != 0 and pd.notna(b_crowded):
+        ratio_binocular = computeLogRatio(b_crowded, b_standard)
+
+    ratio_monocular = (np.nan, complex(np.nan, np.nan))
+    if pd.notna(m_standard) and m_standard != 0 and pd.notna(m_crowded):
+        ratio_monocular = computeLogRatio(m_crowded, m_standard)
+    
+    ratio_standard = (np.nan, complex(np.nan, np.nan))
+    if pd.notna(b_standard) and b_standard != 0 and pd.notna(m_standard):
+        ratio_standard = computeLogRatio(m_standard, b_standard)
+        
+    ratio_crowded = (np.nan, complex(np.nan, np.nan))
+    if pd.notna(b_crowded) and b_crowded != 0 and pd.notna(m_crowded):
+        ratio_crowded = computeLogRatio(m_crowded, b_crowded)
+    
+    all_results.append({
+        'participant_file': filename,
+        'participant_id': participant_id,
+        'JND_Binocular_Standard': b_standard,
+        'JND_Binocular_Crowded': b_crowded,
+        'logRatio_Binocular': ratio_binocular[0],
+        'JND_Monocular_Standard': m_standard,
+        'JND_Monocular_Crowded': m_crowded,
+        'logRatio_Monocular': ratio_monocular[0],
+        'logRatio_Standard': ratio_standard[0],
+        'logRatio_Crowded': ratio_crowded[0],
+        'logRatioW_Binocular': ratio_binocular[1],
+        'logRatioW_Monocular': ratio_monocular[1],
+        'logRatioW_Standard': ratio_standard[1],
+        'logRatioW_Crowded': ratio_crowded[1]
+    })
+
+final_df = pd.DataFrame(all_results)
+final_avg_per_participant = final_df.groupby('participant_id').mean(numeric_only=True).reset_index()
+
+# --- PREPARING RATIOS FOR PLOTTING ---
+
+c2s_ratio = ((final_avg_per_participant['logRatio_Monocular'], final_avg_per_participant['logRatio_Binocular']))
+m2b_ratio = ((final_avg_per_participant['logRatio_Standard'], final_avg_per_participant['logRatio_Crowded']))
+
+c2s_ratio = np.array(c2s_ratio)
+m2b_ratio = np.array(m2b_ratio)
+
+c2s_ratioW = ((final_avg_per_participant['logRatioW_Monocular'], final_avg_per_participant['logRatioW_Binocular']))
+m2b_ratioW = ((final_avg_per_participant['logRatioW_Standard'], final_avg_per_participant['logRatioW_Crowded']))
+
+c2s_ratioW = np.array(c2s_ratioW)
+m2b_ratioW = np.array(m2b_ratioW)
+
+m = np.nanmax((np.nanmax(np.abs(c2s_ratio.flatten())), np.nanmax(np.abs(m2b_ratio.flatten()))))
+mW = np.nanmax((np.nanmax(np.abs(c2s_ratioW.flatten())), np.nanmax(np.abs(m2b_ratioW.flatten()))))
+
+c2s_ratioW = c2s_ratioW / mW
+m2b_ratioW = m2b_ratioW / mW
+
+extlims = (-m*1.1, m*1.1)
+
+both = (c2s_ratio, m2b_ratio)
+nobins = 20
+ylims = (0, 0.3)
+
+# --- PLOTTING PANEL 1 (Distributions & Grid) ---
+
+plt.figure(0, (10, 10))
+yy = []
+for hist_p in range(2):
+    plt.subplot(3, 2, 1 + hist_p)
+    y = both[hist_p].flatten()
+    
+    # Clean out NaNs for histogram and wilcoxon
+    y_valid = y[~np.isnan(y)]
+    
+    xd = np.linspace(extlims[0], extlims[1], nobins)
+    d = np.histogram(y_valid, xd)
+    xd = (d[1][1:] + d[1][0:-1]) / 2
+    d = d[0]
+    
+    if np.sum(d) > 0:
+        d = d / np.sum(d)
+        
+    plt.bar(xd, d, width=xd[1]-xd[0], color='k')
+    plt.plot(np.zeros(2), ylims, 'g--')
+    plt.gca().set_ylim(ylims)
+    
+    if hist_p == 0:
+        plt.xlabel('Crowding strength')
+        if len(y_valid) > 0:
+            print('p-value for Crowding strength diff than 0: ' + str(wilcoxon(y_valid)[1]))
+    else:
+        plt.xlabel('Binocular benefit')
+        if len(y_valid) > 0:
+            print('p-value for Binocular benefit diff than 0: ' + str(wilcoxon(y_valid)[1]))
+    yy.append(y_valid)
+    plt.gca().set_aspect(2)
+
+xy_collection = []
+for i in range(2):
+    for j in range(2):
+        ax = plt.subplot(3, 2, 3 + i*2 + j)
+        x = m2b_ratio[i, :]
+        y = c2s_ratio[j, :]
+        
+        # Mask out NaNs so Pearsonr and Polyfit don't fail
+        valid_mask = ~(np.isnan(x) | np.isnan(y))
+        x_val = x[valid_mask]
+        y_val = y[valid_mask]
+        
+        w = np.concatenate((np.expand_dims(np.real(m2b_ratioW[i,:]), 1),
+                         np.expand_dims(np.imag(m2b_ratioW[i,:]), 1),
+                         np.expand_dims(np.real(m2b_ratioW[j,:]), 1),
+                         np.expand_dims(np.imag(m2b_ratioW[j,:]), 1)), 1)
+        w = np.mean(w, 1)
+        
+        plt.plot(extlims, np.zeros(2), 'g--')
+        plt.plot(np.zeros(2), extlims, 'g--')
+        plt.plot(extlims, extlims, 'k--')
+        
+        for dot_p in range(len(x)):
+            if not np.isnan(x[dot_p]) and not np.isnan(y[dot_p]):
+                plt.plot(x[dot_p], y[dot_p], 'ok', markersize=2+20*w[dot_p])
+        
+        if len(x_val) > 0:
+            ext = np.nanmax((np.nanmax(np.abs(x_val)), np.nanmax(np.abs(y_val)))) * 1.1
+        else:
+            ext = 1.0
+            
+        xy_collection.append((x_val, y_val))
+        
+        if len(x_val) > 1:
+            coef = np.polyfit(x_val, y_val, 1)
+            poly1d_fn = np.poly1d(coef) 
+            plt.plot(x_val, poly1d_fn(x_val), '-r')
+            xfine, yhat_lower_upper, shaderxy = fitUpperLowerBounds(x_val, y_val, alpha=0.975)
+            plt.plot(xfine, yhat_lower_upper[1], 'r--')
+            plt.plot(xfine, yhat_lower_upper[2], 'r--')
+            print('Panel at row '+str(i+1)+' column '+str(j+1)+': p-value for correlation '+str(pearsonr(x_val, y_val)[1]))
+            
+        ax.set_xlim((-ext, ext))
+        ax.set_ylim((-ext, ext))
+        
+        if i == 0:
+            plt.xlabel('Binocular benefit under Uncrowded')
+        else:
+            plt.xlabel('Binocular benefit under Crowded')
+        if j == 0:
+            plt.ylabel('Crowding strength under Monocular')
+        else:
+            plt.ylabel('Crowding strength under Binocular')
+        ax.set_aspect('equal')
+        
+plt.tight_layout()
+plt.show()
+
+# --- PLOTTING PANEL 2 (Aggregated Scatter) ---
+
+xboth = np.concatenate((xy_collection[1][0], xy_collection[2][0]))
+yboth = np.concatenate((xy_collection[1][1], xy_collection[2][1]))
+
+plt.figure(1, (10, 10))
+ax = plt.axes((0.1, 0.1, 0.8, 0.8))
+ax.plot(xboth, yboth, 'ok')
+if len(xboth) > 0:
+    m = np.nanmax((np.nanmax(np.abs(xboth)), np.nanmax(np.abs(yboth))))
+    ext = m * 1.1
+    if len(xboth) > 1:
+        xfine, yhat_lower_upper, shaderxy = fitUpperLowerBounds(xboth, yboth, alpha=0.975)
+        ax.plot(xfine, yhat_lower_upper[1], 'r--')
+        ax.plot(xfine, yhat_lower_upper[2], 'r--')
+    ax.plot(np.zeros(2), (-ext, ext), 'g--')
+    ax.plot((-ext, ext), np.zeros(2), 'g--')
+    ax.set_xlim((-ext, ext))
+    ax.set_ylim((-ext, ext))
+
+plt.show()
+___________________________________________________________________________________________________________________________________________________________________________________________________________________
+
 #plotting ratios 
 import matplotlib.pyplot as plt
 import pandas as pd
