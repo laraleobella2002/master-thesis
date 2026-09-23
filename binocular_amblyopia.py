@@ -60,219 +60,219 @@ def stop_experiment():
     core.quit()
 
 
-# Color calibration
-def calibrate_single_color(color_name, initial_color):
+# # Color calibration
+# def calibrate_single_color(color_name, initial_color):
 
-    color = list(initial_color)
-    mouse = event.Mouse(win=win)
-    patch = visual.Rect(
-        win=win,
-        width=8,
-        height=8,
-        fillColor=color,
-        lineColor=color,
-        pos=(0, 0)
-    )
+#     color = list(initial_color)
+#     mouse = event.Mouse(win=win)
+#     patch = visual.Rect(
+#         win=win,
+#         width=8,
+#         height=8,
+#         fillColor=color,
+#         lineColor=color,
+#         pos=(0, 0)
+#     )
 
-    instructions = visual.TextStim(
-        win=win,
-        text=(
-            f"{color_name} CALIBRATION\n\n"
-            f"Look through the {color_name} filter.\n\n"
-            f"The {color_name} stimulus should be just not visible.\n\n"
-            "Press SPACE when finished."
-        ),
-        color='black',
-        height=0.7,
-        wrapWidth=35,
-        pos=(0, 13),
-        alignText='left'
-    )
+#     instructions = visual.TextStim(
+#         win=win,
+#         text=(
+#             f"{color_name} CALIBRATION\n\n"
+#             f"Look through the {color_name} filter.\n\n"
+#             f"The {color_name} stimulus should be just not visible.\n\n"
+#             "Press SPACE when finished."
+#         ),
+#         color='black',
+#         height=0.7,
+#         wrapWidth=35,
+#         pos=(0, 13),
+#         alignText='left'
+#     )
 
-    slider_x_min = -8
-    slider_x_max = 8
-    slider_width = slider_x_max - slider_x_min
-    slider_y = [-7, -5.5, -7]
-    slider_names = ['R', 'G', 'B']
+#     slider_x_min = -8
+#     slider_x_max = 8
+#     slider_width = slider_x_max - slider_x_min
+#     slider_y = [-7, -5.5, -7]
+#     slider_names = ['R', 'G', 'B']
 
-    slider_backgrounds = []
-    slider_handles = []
-    slider_labels = []
-    value_texts = []
+#     slider_backgrounds = []
+#     slider_handles = []
+#     slider_labels = []
+#     value_texts = []
 
-    for i in range(3):
+#     for i in range(3):
 
-        background = visual.Rect(
-            win=win,
-            width=slider_width,
-            height=0.35,
-            pos=(0, slider_y[i]),
-            fillColor='lightgray',
-            lineColor='black'
-        )
+#         background = visual.Rect(
+#             win=win,
+#             width=slider_width,
+#             height=0.35,
+#             pos=(0, slider_y[i]),
+#             fillColor='lightgray',
+#             lineColor='black'
+#         )
 
-        handle = visual.Rect(
-            win=win,
-            width=0.45,
-            height=0.8,
-            pos=(0, slider_y[i]),
-            fillColor='black',
-            lineColor='black'
-        )
+#         handle = visual.Rect(
+#             win=win,
+#             width=0.45,
+#             height=0.8,
+#             pos=(0, slider_y[i]),
+#             fillColor='black',
+#             lineColor='black'
+#         )
 
-        label = visual.TextStim(
-            win=win,
-            text=slider_names[i],
-            color='black',
-            height=0.45,
-            pos=(-9.5, slider_y[i])
-        )
+#         label = visual.TextStim(
+#             win=win,
+#             text=slider_names[i],
+#             color='black',
+#             height=0.45,
+#             pos=(-9.5, slider_y[i])
+#         )
 
-        # Numeric value
-        value_display = visual.TextStim(
-            win=win,
-            text=f"{color[i]:.2f}",
-            color='black',
-            height=0.4,
-            pos=(9.5, slider_y[i])
-        )
+#         # Numeric value
+#         value_display = visual.TextStim(
+#             win=win,
+#             text=f"{color[i]:.2f}",
+#             color='black',
+#             height=0.4,
+#             pos=(9.5, slider_y[i])
+#         )
 
-        slider_backgrounds.append(background)
-        slider_handles.append(handle)
-        slider_labels.append(label)
-        value_texts.append(value_display)
+#         slider_backgrounds.append(background)
+#         slider_handles.append(handle)
+#         slider_labels.append(label)
+#         value_texts.append(value_display)
 
-    finish_button = visual.Rect(
-        win=win,
-        width=5,
-        height=1.2,
-        pos=(0, -10),
-        fillColor='lightgray',
-        lineColor='black'
-    )
+#     finish_button = visual.Rect(
+#         win=win,
+#         width=5,
+#         height=1.2,
+#         pos=(0, -10),
+#         fillColor='lightgray',
+#         lineColor='black'
+#     )
 
-    finish_text = visual.TextStim(
-        win=win,
-        text="FINISHED",
-        color='black',
-        height=0.45,
-        pos=(0, -10)
-    )
+#     finish_text = visual.TextStim(
+#         win=win,
+#         text="FINISHED",
+#         color='black',
+#         height=0.45,
+#         pos=(0, -10)
+#     )
 
-    dragging = None
+#     dragging = None
 
-    while True:
+#     while True:
 
-        mouse_x, mouse_y = mouse.getPos()
+#         mouse_x, mouse_y = mouse.getPos()
 
-        if mouse.getPressed()[0]:
-            if dragging is None:
+#         if mouse.getPressed()[0]:
+#             if dragging is None:
 
-                for i in range(3):
-                    if (slider_y[i] - 0.6 <= mouse_y <= slider_y[i] + 0.6 and slider_x_min <= mouse_x <= slider_x_max):
-                        dragging = i
+#                 for i in range(3):
+#                     if (slider_y[i] - 0.6 <= mouse_y <= slider_y[i] + 0.6 and slider_x_min <= mouse_x <= slider_x_max):
+#                         dragging = i
 
-                if (-4.5 <= mouse_x <= 4.5 and -11.6 <= mouse_y <= -10.4):
-                    break
+#                 if (-4.5 <= mouse_x <= 4.5 and -11.6 <= mouse_y <= -10.4):
+#                     break
 
-            if dragging is not None:
-                x = max(slider_x_min, min(slider_x_max, mouse_x))
-                value = ((x - slider_x_min)/slider_width) * 2 - 1
-                color[dragging] = value
-        else:
-            dragging = None
+#             if dragging is not None:
+#                 x = max(slider_x_min, min(slider_x_max, mouse_x))
+#                 value = ((x - slider_x_min)/slider_width) * 2 - 1
+#                 color[dragging] = value
+#         else:
+#             dragging = None
 
-        patch.fillColor = color
-        patch.lineColor = color
+#         patch.fillColor = color
+#         patch.lineColor = color
 
-        for i in range(3):
-            handle_x = slider_x_min + ((color[i] + 1) / 2) * slider_width
-            slider_handles[i].pos = handle_x, slider_y[i]
-            value_texts[i].text = f"{color[i]:.2f}"
+#         for i in range(3):
+#             handle_x = slider_x_min + ((color[i] + 1) / 2) * slider_width
+#             slider_handles[i].pos = handle_x, slider_y[i]
+#             value_texts[i].text = f"{color[i]:.2f}"
 
-        instructions.draw()
-        patch.draw()
+#         instructions.draw()
+#         patch.draw()
 
-        for i in range(3):
-            slider_backgrounds[i].draw()
-            slider_handles[i].draw()
-            slider_labels[i].draw()
-            value_texts[i].draw()
+#         for i in range(3):
+#             slider_backgrounds[i].draw()
+#             slider_handles[i].draw()
+#             slider_labels[i].draw()
+#             value_texts[i].draw()
 
-        finish_button.draw()
-        finish_text.draw()
+#         finish_button.draw()
+#         finish_text.draw()
 
-        win.flip()
+#         win.flip()
 
-    return color
+#     return color
 
-step = 0.01
+# step = 0.01
 
-instruction = visual.TextStim(
-    win=win,
-    text=(
-        "COLOR CALIBRATION\n\n"
-        "Put on the glasses.\n\n"
-        "The goal is to make the red and blue stimuli equally visible.\n\n"
-        "Use the arrows to adjust intensity.\n\n"
-        "Press SPACE to continue."
-    ),
-    color='black',
-    height=0.8,
-    wrapWidth=35,
-    alignText='left'
-)
-instruction.draw()
-win.flip()
+# instruction = visual.TextStim(
+#     win=win,
+#     text=(
+#         "COLOR CALIBRATION\n\n"
+#         "Put on the glasses.\n\n"
+#         "The goal is to make the red and blue stimuli equally visible.\n\n"
+#         "Use the arrows to adjust intensity.\n\n"
+#         "Press SPACE to continue."
+#     ),
+#     color='black',
+#     height=0.8,
+#     wrapWidth=35,
+#     alignText='left'
+# )
+# instruction.draw()
+# win.flip()
 
-keys = event.waitKeys(keyList=['space', 'escape'])
-if 'escape' in keys:
-    win.close()
-    core.quit()
+# keys = event.waitKeys(keyList=['space', 'escape'])
+# if 'escape' in keys:
+#     win.close()
+#     core.quit()
 
-win.mouseVisible = True
-red_color = calibrate_single_color(color_name='RED', initial_color=[1.0, -1.0, -1.0])
-blue_color = calibrate_single_color(color_name='BLUE', initial_color=[-1.0, -1.0, 1.0])
+# win.mouseVisible = True
+# red_color = calibrate_single_color(color_name='RED', initial_color=[1.0, -1.0, -1.0])
+# blue_color = calibrate_single_color(color_name='BLUE', initial_color=[-1.0, -1.0, 1.0])
 
-instruction = visual.TextStim(
-    win=win,
-    text=(
-        "You should now see the two colors look equally strong.\n\n"
-        "Press SPACE to continue.\n\n"
-    ),
-    color='black',
-    height=0.7,
-    wrapWidth=35,
-    pos=(0, 6)
-)
+# instruction = visual.TextStim(
+#     win=win,
+#     text=(
+#         "You should now see the two colors look equally strong.\n\n"
+#         "Press SPACE to continue.\n\n"
+#     ),
+#     color='black',
+#     height=0.7,
+#     wrapWidth=35,
+#     pos=(0, 6)
+# )
 
-red_patch = visual.Rect(
-    win=win,
-    width=5,
-    height=5,
-    fillColor=red_color,
-    lineColor=red_color,
-    pos=(-6, -2)
-)
+# red_patch = visual.Rect(
+#     win=win,
+#     width=5,
+#     height=5,
+#     fillColor=red_color,
+#     lineColor=red_color,
+#     pos=(-6, -2)
+# )
 
-blue_patch = visual.Rect(
-    win=win,
-    width=5,
-    height=5,
-    fillColor=blue_color,
-    lineColor=blue_color,
-    pos=(6, -2)
-)
+# blue_patch = visual.Rect(
+#     win=win,
+#     width=5,
+#     height=5,
+#     fillColor=blue_color,
+#     lineColor=blue_color,
+#     pos=(6, -2)
+# )
 
-instruction.draw()
-red_patch.draw()
-blue_patch.draw()
-win.flip()
+# instruction.draw()
+# red_patch.draw()
+# blue_patch.draw()
+# win.flip()
 
-keys = event.waitKeys(keyList=['space', 'escape'])
-if 'escape' in keys:
-    win.close()
-    core.quit()
+# keys = event.waitKeys(keyList=['space', 'escape'])
+# if 'escape' in keys:
+#     win.close()
+#     core.quit()
 
 
 # Stimuli
@@ -282,21 +282,15 @@ lineThickness = 2
 cross_size = 0.3
 cross_width = 4
 
-contrast = 0.2
-red_opacity = 1.0
-blue_opacity = 1.0
-
 red_color = [1, -1, -1]
-blue_color = [-1, -1, 1]
+blue_color = [-1, 1, 1]
 
 if amblyopic_eye == 'left' or amblyopic_eye == 'l':
     amblyopic_eye_color = red_color
     healthy_eye_color = blue_color
-    blue_opacity = contrast
 elif amblyopic_eye == 'right' or amblyopic_eye == 'r':
     amblyopic_eye_color = blue_color
     healthy_eye_color = red_color
-    red_opacity = contrast
 
 circle = visual.Circle(
     win=win,
@@ -314,6 +308,89 @@ square = visual.Rect(
     fillColor=None,
     lineWidth=cross_width
 )
+
+
+# Interocular contrast matching
+matched_contrast = 0.2
+contrast_step = 0.02
+min_contrast = 0.01
+max_contrast = 1.00
+
+instruction = visual.TextStim(
+    win,
+    text=(
+        'Contrast matching\n\n'
+        'Adjust the contrast until both cubes appear with the same intensity.\n\n'
+        'RIGHT arrow: increase contrast\n'
+        'LEFT arrow: decrease contrast\n\n'
+        'Press SPACE when they look matched.'
+    ),
+    color='black',
+    height=1.5,
+    wrapWidth=45,
+    alignText='left'
+)
+instruction.draw()
+win.flip()
+
+event.clearEvents()
+instruction_keys = []
+while not instruction_keys:
+    instruction_keys = event.getKeys(keyList=['space', 'escape'])
+    core.wait(0.05)
+if 'escape' in instruction_keys:
+    stop_experiment()
+
+left_cube_pos = (-5, 0)
+right_cube_pos = (5, 0)
+cube_size = 3
+
+healthy_cube_color = visual.Rect(
+    win=win,
+    width=cube_size,
+    height=cube_size,
+    fillColor=healthy_eye_color,
+    opacity=matched_contrast,
+    pos=left_cube_pos
+)
+
+amblyopic_cube_color = visual.Rect(
+    win=win,
+    width=cube_size,
+    height=cube_size,
+    fillColor=amblyopic_eye_color,
+    opacity=1.0,
+    pos=right_cube_pos
+)
+
+matching_done = False
+while not matching_done:
+
+    healthy_cube_color.opacity = matched_contrast
+    healthy_cube_color.draw()
+    amblyopic_cube_color.draw()
+    win.flip()
+
+    keys = event.waitKeys(keyList=['left', 'right', 'space', 'escape'])
+    if 'escape' in keys:
+        stop_experiment()
+    key_pressed = keys[0]
+
+    # Decrease contrast
+    if key_pressed == 'left':
+        matched_contrast -= contrast_step
+        if matched_contrast < min_contrast:
+            matched_contrast = min_contrast
+
+    # Increase contrast
+    elif key_pressed == 'right':
+        matched_contrast += contrast_step
+        if matched_contrast > max_contrast:
+            matched_contrast = max_contrast
+
+    # Accept match
+    elif key_pressed == 'space':
+        matching_done = True
 
 
 # Display experiment
@@ -474,7 +551,7 @@ for condition in block_conditions:
                 win=win,
                 lineColor=healthy_eye_color,
                 lineWidth=lineThickness,
-                opacity=contrast,
+                opacity=matched_contrast,
                 start=(current_eccentricity + offset, lineHeight),
                 end=(current_eccentricity + offset, 0)
             )
@@ -483,7 +560,7 @@ for condition in block_conditions:
                 win=win,
                 lineColor=healthy_eye_color,
                 lineWidth=lineThickness,
-                opacity=contrast,
+                opacity=matched_contrast,
                 start=(current_eccentricity, 0),
                 end=(current_eccentricity, -lineHeight)
             )
@@ -492,7 +569,7 @@ for condition in block_conditions:
                 win=win,
                 lineColor=healthy_eye_color,
                 lineWidth=cross_width,
-                opacity=contrast,
+                opacity=matched_contrast,
                 start=(0, 0),
                 end=(0, cross_size)
             )
@@ -501,7 +578,7 @@ for condition in block_conditions:
                 win=win,
                 lineColor=healthy_eye_color,
                 lineWidth=cross_width,
-                opacity=contrast,
+                opacity=matched_contrast,
                 start=(-cross_size, 0),
                 end=(0, 0)
             )
