@@ -1,0 +1,2 @@
+participant_name,session_num,amblyopic_eye,contrast,screen_width,screen_height,step_size,max_value,num_trials,lineHight,lineThickness,stim_time,spacing,start_time,end_time
+1,1,r,0.5400000000000001,1920,1080,0.01,0.25,170,1.5,2,0.1,0.3,2026-09-23 11:54:33,2026-09-23 12:24:36
